@@ -3,12 +3,30 @@ from Compiler.types import *
 from Compiler.oram import *
 from Programs.Source.HeapQ import MinHeapQ,MaxHeapQ
 
+print_ln('-'*50+'RESULT'+'-'*50)
+
+MINX = -1000
+MAXX = 1000
+
+D = 4  # 向量维度
+M = 16  # 每个节点的最大连接数 (除第0层外)
+MMAX0 = 2 * M  # 第0层的最大连接数
+MMAX = M
+N = 10000  # 数据点数量
+EF_CONSTRUCTION = 10  # 构建索引时的搜索范围大小
+K = 3  # K-NN搜索中的K值
+
+x = OptimalORAM(size = 32, value_length = 4)
+x.access(sint(1), (2,3,4,2), True)
+va = x[1]
+vv = va[2] # tuple [0,3]
+print_ln('x[1][2] = %s',vv.reveal())
+
 Q = MaxHeapQ(max_size=32, # Defines value range [0, max_size-1] and heap capacity
         #   oram_type=OptimalORAM,
         #   int_type=sint,
         #   entry_size=(10, 6) # (priority_bits, value_bits) for HeapEntry
 )
-print_ln('-'*50+'Part 1'+'-'*50)
 
 for i in range(10):
     op = sint.get_input_from(0)
