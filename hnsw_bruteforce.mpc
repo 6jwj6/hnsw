@@ -239,7 +239,7 @@ print_ln('-'*50+'RESULT'+'-'*50)
 print_ln()
 # tryheapq()
 # trysort()
-test()
+# test()
 print_ln("*"*50)
 print_ln("N (数据点数): %s", N)
 print_ln("D (维度): %s", D)
@@ -260,13 +260,12 @@ def _(i):
 
 ave_recall = 0.0
 # for q_idx in range(9,11):
-@for_range(nq)
+@for_range(9,11)
 def _(q_idx):
     # 现在的 q_idx 就是 querynode 列表的索引 (0, 1, 2...)
-    print_ln("\n--------------------------------")
+    print_ln("\n"+'-'*100)
     print_ln("当前查询点 (索引 %s) 为 (%s)", q_idx, querynode[q_idx].reveal())
-    # print_ln("当前查询点 (索引 %s) 为 (%s)", q_idx, querynode[q_idx].reveal())
-   
+
     # bruteforce_for_query_heap(q_idx)
     bruteforce_for_query_sort(q_idx)
     # bruteforce_for_query_traverse(q_idx)

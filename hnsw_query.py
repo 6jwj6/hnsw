@@ -10,11 +10,11 @@ MINX = -1000
 MAXX = 1000
 
 D = 4
-M = 5
+M = 10
 MMAX0 = 2 * M
 MMAX = M
-N = 1000
-EF_CONSTRUCTION = 5
+N = 10000
+EF_CONSTRUCTION = 10
 K = 3
 
 # --- 数据容器分离 ---
@@ -78,12 +78,12 @@ def search_layer(q_idx, ep, ef, lc):
     heapq.heapify(W)
     rec = 0
     while C:
-        # rec += 1
+        rec += 1
         dist_c, c_node_idx = heapq.heappop(C)
         if dist_c > -W[0][0]:
             break
         for e_node_idx in edge[c_node_idx]:
-            rec += 1
+            # rec += 1  
             if False or (e_node_idx not in v):
                 v.add(e_node_idx)
                 # 调用 node-to-node 距离函数
@@ -95,6 +95,9 @@ def search_layer(q_idx, ep, ef, lc):
                         heapq.heappop(W)
     # return [item[1] for item in sorted(W, key=lambda x: x[0], reverse=True)]
     print(f"rec = {rec}")
+    '''可以发现实际while循环次数很小，远不到ef*ef'''
+    '''rec位置换一下， 可以发现扩张的次数也不大。'''
+    '''和ef、N 正相关，和 M 负相关， 和 K、D 没关系'''
     global maxloop
     maxloop = max(maxloop, rec)
     return [item[1] for item in W]
@@ -116,12 +119,12 @@ def search_layer_for_query(q_idx, ep, ef, lc):
     heapq.heapify(W)
     rec = 0
     while C:
-        # rec += 1
+        rec += 1
         dist_c, c_node_idx = heapq.heappop(C)
         if dist_c > -W[0][0]:
             break
         for e_node_idx in edge[c_node_idx]:
-            rec += 1
+            # rec += 1
             if e_node_idx not in v:
                 v.add(e_node_idx)
                 # 调用 query-to-node 距离函数
@@ -302,7 +305,7 @@ def main():
     start_insert = time.time()
     for i in range(1, N + 1):
         insert(i, M, MMAX, EF_CONSTRUCTION, ML)
-        # if (i >= N) and (i % (N // 100) == 0):
+        # if (i >= N/100) and (i % (N / 100) == 0):
         print(f"已插入节点数 = {i} / {N}", file=sys.stderr)
     end_insert = time.time()
     duration_insert = end_insert - start_insert
