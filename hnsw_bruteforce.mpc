@@ -13,15 +13,12 @@ D = 4  # 向量维度
 M = 5  # 每个节点的最大连接数 (除第0层外)
 MMAX0 = 2 * M  # 第0层的最大连接数
 MMAX = M
-N = 100 # 数据点数量
+N = 100000 # 数据点数量
 EF_CONSTRUCTION = 5  # 构建索引时的搜索范围大小
 K = 3  # K-NN搜索中的K值
 # NlgN = N * (int)(math.log2(N))
-# 数据和图结构
-
 # node = [[] for _ in range(N + 1)]
 node = sint.Tensor([N+1,D])
-
 
 # HNSW 算法状态
 L = 0  # 当前最高层数
@@ -31,7 +28,9 @@ ML = 1 / math.log(M)
 
 # def trysort():
 #     Q = sint.Tensor([1000, 2])
-#     for i in range(1000):
+#     # for i in range(1000):
+#     @for_range(1000)
+#     def _(i):
 #         op = sint.get_input_from(1)
 #         x = sint.get_input_from(1)
 #         x = x + 100
@@ -54,6 +53,7 @@ ML = 1 / math.log(M)
 #     print_ln('%s', x[1][2].reveal())
 
 # def tryheapq():
+#     start_timer(timer_id=111)
 #     Q = MaxHeapQ(max_size=100)
     
 #     print_ln('%s', Q.pop()[0].reveal())
@@ -62,8 +62,10 @@ ML = 1 / math.log(M)
 #     print_ln('%s', Q.pop()[0].reveal())
 #     print_ln('%s', Q.pop()[0].reveal())
 #     for i in range(10):
-#         op = sint.get_input_from(0)
-#         x = sint.get_input_from(0)
+#     # @for_range(1000)
+#     # def _(i):
+#         op = sint.get_input_from(1)
+#         x = sint.get_input_from(1)
 #         x = x + 100
 #         pos = i + 130
 #         Q.update(pos, x, op==1)
@@ -92,30 +94,36 @@ ML = 1 / math.log(M)
 #             ee = Q.pop(over_size)
 #             print_ln('size > 3, %s poped...', ee[0].reveal())
 #             print_ln('size = %s',Q.size.reveal())
-
+#     stop_timer(timer_id=111)
 #     print_ln('-'*50+'END'+'-'*50)
 
-# def test():
-#     a = OptimalORAM(size = 101, value_length = MMAX0+10)
-#     a[1] = (3,4,5)
-#     a[a[1][2]] = (3,3,4,5)
-#     print_ln('aaa = %s', a[5][2].reveal())
-#     print_ln('len = %s', len(a[1]))
-#     for i in range(10):
-#         tmp = sint.Array(100)
-#         tmp.input_from(1)
-#         print_ln('%s',type(tmp))
-#         print_ln('%s',tmp.reveal_list())
-#         # for _ in range(100):
-#         #     print_ln('%s', tmp[_].reveal())
-#         # a.access(i,[*tmp],True)
-#         # a.access(i, tuplify([*tmp]), True)
-#         # a[i] = tuplify([*tmp])
-#         a[i] = [*tmp]
-#         # print_ln('%s',[a[i][j].reveal() for j in range(D)])
-#         print_ln('a[i][3] = %s',a[i][3].reveal())
-#         a.delete(i)
-#         print_ln('%s', a[i][2].reveal())
+def test():
+    x = [[] for i in range(10)]
+    for i in range(10):
+        x[i] = sint(i)
+    y = [i+1 for i in x]
+    print_ln('%s',[ii.reveal() for ii in y])
+    return
+    a = OptimalORAM(size = 101, value_length = MMAX0+10)
+    a[1] = (3,4,5)
+    a[a[1][2]] = (3,3,4,5)
+    print_ln('aaa = %s', a[5][2].reveal())
+    print_ln('len = %s', len(a[1]))
+    for i in range(10):
+        tmp = sint.Array(100)
+        tmp.input_from(1)
+        print_ln('%s',type(tmp))
+        print_ln('%s',tmp.reveal_list())
+        # for _ in range(100):
+        #     print_ln('%s', tmp[_].reveal())
+        # a.access(i,[*tmp],True)
+        # a.access(i, tuplify([*tmp]), True)
+        # a[i] = tuplify([*tmp])
+        a[i] = [*tmp]
+        # print_ln('%s',[a[i][j].reveal() for j in range(D)])
+        print_ln('a[i][3] = %s',a[i][3].reveal())
+        a.delete(i)
+        print_ln('%s', a[i][2].reveal())
 
 def distance_query_to_node(q_idx, node_idx):
     """计算一个查询点和一个主数据集节点之间的距离"""
@@ -147,7 +155,7 @@ def init():
     print_ln("开始读取数据...")
     tmp = sint.Array(D)
     # for i in range(1, N + 1):
-    @for_range(1,N+1)
+    @for_range_opt(1,N+1)
     def _(i):
         tmp.input_from(1)
         node[i] = tmp
@@ -157,7 +165,6 @@ def init():
     if N >= 3:
         for i in range(1, 4):
             print_ln("节点 %s: %s", i, [node[i][j].reveal() for j in range(D)])
-
 
 # b_Q = MaxHeapQ(max_size = K + 2)
 # def bruteforce_for_query_heap(q_idx):
@@ -181,31 +188,58 @@ def init():
 #     print_ln("查询耗时: %s ms", duration_ms)
 #     return ret
 
+@function_block
 def bruteforce_for_query_sort(q_idx):
     """暴力搜索查询点 q_idx 的 K 个最近邻，用 sort"""
-    start_timer(timer_id = q_idx)
+    start_timer(timer_id = 111)
     start_time = time.time()
     sQ = sint.Tensor([N, 2])
     # for i in range(1, N+1):
-    @for_range(1,N+1)
+    @for_range_opt(1,N+1)
     def _(i):
         dist = distance_query_to_node(q_idx, i)
         sQ[i - 1] = (i, dist)
     sQ.sort(key_indices = [1])
     sQ = sQ.get_vector_by_indices(None, 0)[:K:]
     end_time = time.time()
-    stop_timer(timer_id = q_idx)
+    stop_timer(timer_id = 111)
     duration_ms = (end_time - start_time) * 1000
     print_ln("\n暴力搜索结果:")
     print_ln('序号: %s', [_.reveal() for _ in sQ])
     print_ln("查询耗时: %s ms", duration_ms)
     return sQ
+
+# def bruteforce_for_query_traverse(q_idx):
+#     """暴力搜索查询点 q_idx 的 K 个最近邻，用 sort"""
+#     start_timer(timer_id = q_idx)
+#     start_time = time.time()
+#     sQ = sint.Tensor([N, 2])
+#     @for_range_opt(1, N+1)
+#     def _(i):
+#         dist = distance_query_to_node(q_idx, i)
+#         sQ[i - 1] = (dist, i)
+#     res = sint.Tensor([K+1, 2])
+#     res.assign_all(1000000000)
+#     # for i in range(N):
+#     @for_range_opt(N)
+#     def _(i):
+#         res[K] = sQ[i]
+#         res.sort()
+#     res = res.get_vector_by_indices(None, 1)[:K:]
+#     end_time = time.time()
+#     stop_timer(timer_id = q_idx)
+#     duration_ms = (end_time - start_time) * 1000
+#     print_ln("\n暴力搜索结果:")
+#     print_ln('序号: %s', [x.reveal() for x in res])
+#     print_ln("查询耗时: %s ms", duration_ms)
+#     return sQ
+
 '''-------------------主程序-----------------------------'''
 print_ln('-'*50+'RESULT'+'-'*50)
 print_ln()
 # tryheapq()
 # trysort()
-# test()
+test()
 print_ln("*"*50)
 print_ln("N (数据点数): %s", N)
 print_ln("D (维度): %s", D)
@@ -217,9 +251,7 @@ print_ln("*"*50)
 init()
 
 nq = 21
-# querynode = [] # 确保查询列表是空的
 querynode = sint.Tensor([nq,D])
-# for i in range(nq):
 @for_range(nq)
 def _(i):
     val = ((i - (nq - 1) // 2) * ((MAXX - MINX) // (nq - 1)))
@@ -227,9 +259,9 @@ def _(i):
     querynode[i] = [val] * D
 
 ave_recall = 0.0
-for q_idx in range(9,11):
-# @for_range(9,11)
-# def _(q_idx):
+# for q_idx in range(9,11):
+@for_range(nq)
+def _(q_idx):
     # 现在的 q_idx 就是 querynode 列表的索引 (0, 1, 2...)
     print_ln("\n--------------------------------")
     print_ln("当前查询点 (索引 %s) 为 (%s)", q_idx, querynode[q_idx].reveal())
@@ -237,5 +269,6 @@ for q_idx in range(9,11):
    
     # bruteforce_for_query_heap(q_idx)
     bruteforce_for_query_sort(q_idx)
+    # bruteforce_for_query_traverse(q_idx)
    
 print_ln('-'*50+'END'+'-'*50)
