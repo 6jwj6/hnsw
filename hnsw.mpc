@@ -21,8 +21,10 @@ x.access(sint(1), (2,3,4,2), True)
 va = x[1]
 vv = va[2] # tuple [0,3]
 print_ln('x[1][2] = %s',vv.reveal())
+x.delete(1)
+print_ln('%s', x[1][2].reveal())
 
-Q = MaxHeapQ(max_size=32, # Defines value range [0, max_size-1] and heap capacity
+Q = MaxHeapQ(max_size=100, # Defines value range [0, max_size-1] and heap capacity
         #   oram_type=OptimalORAM,
         #   int_type=sint,
         #   entry_size=(10, 6) # (priority_bits, value_bits) for HeapEntry
@@ -32,7 +34,7 @@ for i in range(10):
     op = sint.get_input_from(0)
     x = sint.get_input_from(0)
     x = x + 100
-    pos = i + 10
+    pos = i + 130
     Q.update(pos, x, op==1)
     entry_Pop = Q.pop(op==0)
     entry_Top = Q.top(op==2)

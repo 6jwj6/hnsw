@@ -17,8 +17,8 @@ const int M = 16;
 const int Mmax0 = 2 * M;
 const int Mmax = M;
 const int n = 1e4;
-const int efConstruction = 20;
-const int K = 3;
+const int efConstruction = 10;
+const int K = 1;
 
 std::random_device rd;
 std::mt19937 gen(rd());

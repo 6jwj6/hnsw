@@ -14,7 +14,7 @@ MMAX0 = 2 * M  # 第0层的最大连接数
 MMAX = M
 N = 10000  # 数据点数量
 EF_CONSTRUCTION = 10  # 构建索引时的搜索范围大小
-K = 3  # K-NN搜索中的K值
+K = 1  # K-NN搜索中的K值
 
 # 数据和图结构
 # 'node' 将在 init() 中加载或在 gendata() 后填充
