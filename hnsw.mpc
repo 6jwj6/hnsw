@@ -17,15 +17,14 @@ EF_CONSTRUCTION = 5  # 构建索引时的搜索范围大小
 K = 3  # K-NN搜索中的K值
 Maxloop = EF_CONSTRUCTION*EF_CONSTRUCTION
 NlgN = N * (int)(math.log2(N))
+
 # 数据和图结构
 node =  OptimalORAM(size = N + 1, value_length = D)
-
-# edge = OptimalORAM(size = N + 1, value_length = MMAX0 + 5)  # 邻接表, edge[0] 作为占位符
+edge = OptimalORAM(size = N + 1, value_length = MMAX0)  # 邻接表, edge[0] 作为占位符
 # edgelen = OptimalORAM(size = N + 1)
-edge = [[0 for _ in range(MMAX0 + 5)] for _ in range(N)]
-edgelen = [0 for _ in range(N + 1)]
 ite = OptimalORAM(size = NlgN)   # 索引到节点ID的映射, ite[0] 作为占位符
 vis =  OptimalORAM(size = NlgN)
+
 # HNSW 算法状态
 L = 0  # 当前最高层数
 EP = 1  # 入口点 (entry point) 的索引

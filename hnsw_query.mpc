@@ -9,27 +9,27 @@ MINX = -100
 MAXX = 100
 
 D = 4  # 向量维度
-M = 5  # 每个节点的最大连接数 (除第0层外)
+M = 6  # 每个节点的最大连接数 (除第0层外)
 MMAX0 = 2 * M  # 第0层的最大连接数
 MMAX = M
 N = 10  # 数据点数量
-EF_CONSTRUCTION = 5  # 构建索引时的搜索范围大小
-K = 3  # K-NN搜索中的K值
+EF_CONSTRUCTION = 10  # 构建索引时的搜索范围大小
+K = 1  # K-NN搜索中的K值
 Maxloop = EF_CONSTRUCTION*EF_CONSTRUCTION
-NlgN = N * (int)(math.log2(N))
 # 数据和图结构
 node =  OptimalORAM(size = N + 1, value_length = D)
 querynode = []
 # edge = OptimalORAM(size = N + 1, value_length = MMAX0 + 5)  # 邻接表, edge[0] 作为占位符
 # edgelen = OptimalORAM(size = N + 1)
-edge = [[0 for _ in range(MMAX0 + 5)] for _ in range(N)]
-edgelen = [0 for _ in range(N + 1)]
-ite = OptimalORAM(size = NlgN)   # 索引到节点ID的映射, ite[0] 作为占位符
-vis =  OptimalORAM(size = NlgN)
+# NodeCnt = (int)(N*(M/(M-1)+0.1))
+MaxNodeCnt = (int)(N*M/(M-1) + 6*math.sqrt(N*M)/(M-1)) #总点数期望值
+edge = OptimalORAM(size = MaxNodeCnt, value_length = MMAX0)
+ite = OptimalORAM(size = MaxNodeCnt)   # 索引到节点ID的映射, ite[0] 作为占位符
+vis =  OptimalORAM(size = MaxNodeCnt)
 # HNSW 算法状态
 L = 0  # 当前最高层数
-EP = 1  # 入口点 (entry point) 的索引
-nodecnt = 0  # 图中节点的总数 (跨所有层)
+EP = sint(1)  # 入口点 (entry point) 的索引
+NodeCnt = cint(0)
 ML = 1 / math.log(M)
 
 def distance_query_to_node(q_idx, node_idx):
@@ -69,8 +69,8 @@ def search_layer_for_query(q_idx, ep, ef, lc):
     W = sint.Tensor([MW+1, 2])
     W.assign_all(MD)
     W[0] = (-distance_query_to_node(q_idx, ite[ep[0]]), ep[0])
-    lenW = sint(1)
-    running = MemValue(sint(1))
+    # lenW = sint(1)
+    # running = MemValue(sint(1))
     maxloop = 100
     # while C:
     @for_range(maxloop)
@@ -120,23 +120,46 @@ def k_nn_search(q_idx, k_param, ef_param):
 # --- 初始化和主程序 ---
 def init():
     """从文件加载数据"""
-    print_ln("开始读取数据...")
+    print_ln("开始读取 node ...")
+    global node
     tmp = sint.Array(D)
     for i in range(1, N + 1):
         tmp.input_from(1)
         node[i] = [*tmp]
-    print_ln("完成读取 data.txt")
-    
+    print_ln("完成读取 node ...")
     # 打印前3个节点以供验证 (这部分代码保持不变)
     if N >= 3:
         for i in range(1, 4):
             print_ln("节点 %s: %s", i, [node[i][j].reveal() for j in range(D)])
-            
+
+    print_ln("开始读取 EP, L, NodeCnt ...")
+    global EP, L, NodeCnt
+    EP = sint.get_input_from(2).reveal()
+    L = sint.get_input_from(2).reveal()
+    NodeCnt = sint.get_input_from(2).reveal()
+    print_ln("完成读取 EP, L, NodeCnt ...")
+
+    print_ln("开始读取 edge ...")
+    global edge
+    tmp = sint.Array(MMAX0)
+    @for_range_opt(NodeCnt)
+    def _(i):
+        tmp.input_from(2)
+        edge[i] = [*(tmp.get_vector())]
+    print_ln("完成读取 edge ...")
+
+    print_ln("开始读取 ite ...")
+    global ite
+    tmp = sint.Array(NodeCnt)
+    tmp.input_from(2)
+    ite = [*(tmp.get_vector())]
+    print_ln("完成读取 ite ...")
+    
 @function_block
 def bruteforce_for_query_sort(q_idx):
     """暴力搜索查询点 q_idx 的 K 个最近邻，用 sort"""
     start_timer(timer_id = 111)
-    start_time = time.time()
+    # start_time = time.time()
     sQ = sint.Tensor([N, 2])
     # for i in range(1, N+1):
     @for_range_opt(1, N+1)
@@ -145,12 +168,12 @@ def bruteforce_for_query_sort(q_idx):
         sQ[i - 1] = (i, dist)
     sQ.sort(key_indices = [1])
     sQ = sQ.get_vector_by_indices(None, 0)[:K:]
-    end_time = time.time()
+    # end_time = time.time()
     stop_timer(timer_id = 111)
-    duration_ms = (end_time - start_time) * 1000
+    # duration_ms = (end_time - start_time) * 1000
     print_ln("\n暴力搜索结果:")
     print_ln('序号: %s', [_.reveal() for _ in sQ])
-    print_ln("查询耗时: %s ms", duration_ms)
+    # print_ln("查询耗时: %s ms", duration_ms)
     return sQ
 
 '''-------------------主程序-----------------------------'''
@@ -164,6 +187,7 @@ print_ln("mL (层级因子): %s", ML)
 print_ln("K (近邻数): %s", K)
 print_ln("efConstruction: %s", EF_CONSTRUCTION)
 print_ln("*"*50)
+
 print_ln("\nHNSW 图读取完成")
 
 
@@ -172,7 +196,6 @@ nq = 21
 # for i in range(nq):
 #     val = ((i - (nq - 1) / 2) * ((MAXX - MINX) / (nq - 1)))
 #     querynode.append([sint(int(val))] * D)
-
 
 ave_recall = 0.0
 for q_idx in range(9,11):
