@@ -1,0 +1,44 @@
+from Compiler.library import *
+from Compiler.types import *
+from Compiler.oram import *
+from Programs.Source.HeapQ import MinHeapQ,MaxHeapQ
+
+Q = MaxHeapQ(max_size=32, # Defines value range [0, max_size-1] and heap capacity
+        #   oram_type=OptimalORAM,
+        #   int_type=sint,
+        #   entry_size=(10, 6) # (priority_bits, value_bits) for HeapEntry
+)
+print_ln('-'*50+'Part 1'+'-'*50)
+
+for i in range(10):
+    op = sint.get_input_from(0)
+    x = sint.get_input_from(0)
+    x = x + 100
+    pos = i + 10
+    Q.update(pos, x, op==1)
+    entry_Pop = Q.pop(op==0)
+    entry_Top = Q.top(op==2)
+    
+    @if_((op==1).reveal())
+    def _():
+        print_ln('%s inserted at %s...', x.reveal(), pos)
+        print_ln('size = %s',Q.size.reveal())
+
+    @if_((op==0).reveal())
+    def _():
+        print_ln('%s poped...', entry_Pop[0].reveal())
+        print_ln('size = %s',Q.size.reveal())
+
+    @if_((op==2).reveal())
+    def _():
+        print_ln('%s is the top...', entry_Top[0].reveal())
+        print_ln('size = %s',Q.size.reveal())
+
+    over_size = Q.size > 3
+    @if_(over_size.reveal())
+    def _():
+        ee = Q.pop(over_size)
+        print_ln('size > 3, %s poped...', ee[0].reveal())
+        print_ln('size = %s',Q.size.reveal())
+
+print_ln('-'*50+'END'+'-'*50)
