@@ -53,29 +53,8 @@ def distance_node_to_node(idx1, idx2):
 def nxt(W):
     return [i + 1 for i in W]
 
-def search_layer(q_idx, ep, ef, lc):
-    v = set(ep)
-    # 调用 node-to-node 距离函数
-    C = [(distance_node_to_node(q_idx, ite[x]), x) for x in ep]
-    heapq.heapify(C)
-    W = [(-distance_node_to_node(q_idx, ite[x]), x) for x in ep]
-    heapq.heapify(W)
-
-    while C:
-        dist_c, c_node_idx = heapq.heappop(C)
-        if dist_c > -W[0][0]:
-            break
-        for e_node_idx in edge[c_node_idx]:
-            if e_node_idx not in v:
-                v.add(e_node_idx)
-                # 调用 node-to-node 距离函数
-                dist_e = distance_node_to_node(q_idx, ite[e_node_idx])
-                if len(W) < ef or dist_e < -W[0][0]:
-                    heapq.heappush(C, (dist_e, e_node_idx))
-                    heapq.heappush(W, (-dist_e, e_node_idx))
-                    if len(W) > ef:
-                        heapq.heappop(W)
-    return [item[1] for item in sorted(W, key=lambda x: x[0], reverse=True)]
+# def search_layer(q_idx, ep, ef, lc):
+#     return 
 
 def search_layer_for_query(q_idx, ep, ef, lc):
     return
@@ -92,59 +71,59 @@ def select_neighbors_simple(q_idx, C, M_conn, lc):
 # def select_neighbors_heuristic(q_idx, C, M_conn, lc, extend_candidates=False, keep_pruned_connections=True):
 '''heap效果不佳'''
 
-def insert(q_idx, M_param, Mmax_param, efConstruction_param, mL_param):
-    global L, EP, nodecnt
-    current_ep = [EP] if nodecnt != 0 else []
-    '''候选点的序号, 用 [] 存是否有问题？ []'''
-    l = math.floor(-math.log(random.uniform(0.0, 1.0)) * mL_param)
-    '''l 和 L 的比较，是否明文？ 直接明文'''
-    if l > L:
-        EP = nodecnt + 1
-        for _ in range(l, L, -1):
-            nodecnt += 1
-            # ite.append(q_idx)
-            ite[nodecnt] = q_idx
-            # '''wrong'''
-            # edge.append([])
-    for lc in range(L, l, -1):
-        W = search_layer(q_idx, current_ep, 1, lc)
-        '''返回点 用 [] 存是否有问题？ []'''
-        if not W: break
-        assert len(W) == 1
-        current_ep = nxt(W)
-    for lc in range(min(L, l), -1, -1):
-        m_max_lc = MMAX0 if lc == 0 else Mmax_param
-        nodecnt += 1
-        # ite.append(q_idx)
-        ite[nodecnt] = q_idx
-        W = search_layer(q_idx, current_ep, efConstruction_param, lc)
-        if not W:
-            # edge.append([])
-            # '''wrong''' 
-            continue
-        neighbors = select_neighbors_simple(q_idx, W, M_param, lc)
-        # edge.append(neighbors)
-        '''这里不知道个数，需要再处理。目前的处理是用 edgelen 来记录长度。append 就是在 edgelen 位置赋值'''
-        edge[nodecnt] = neighbors
-        edgelen[nodecnt] = len(neighbors)
-        new_node_graph_idx = nodecnt
-        for e_node_idx in neighbors:
-            # edge[e_node_idx].append(new_node_graph_idx)
-            # '''wrong'''
-            edge[e_node_idx][edgelen[e_node_idx]] = new_node_graph_idx
-            edgelen[e_node_idx] += 1
-            if len(edge[e_node_idx]) > m_max_lc:
-            # '''这个比较不是明文if ，要再处理'''
-            # if edgelen[e_node_idx] > m_max_lc:
-                # '''没了'''
-                e_conn = edge[e_node_idx]
-                e_new_conn = select_neighbors_simple(ite[e_node_idx], e_conn, m_max_lc, lc)
-                edge[e_node_idx] = e_new_conn
-                edgelen[e_node_idx] = len(e_new_conn)
-                # '''这里传的是 [] 还是 oram 要再决定一下。或者说 oram 型的怎么传成 [] ，直接[] '''
-        current_ep = nxt(W)
-    if l > L:
-        L = l
+# def insert(q_idx, M_param, Mmax_param, efConstruction_param, mL_param):
+#     global L, EP, nodecnt
+#     current_ep = [EP] if nodecnt != 0 else []
+#     '''候选点的序号, 用 [] 存是否有问题？ []'''
+#     l = math.floor(-math.log(random.uniform(0.0, 1.0)) * mL_param)
+#     '''l 和 L 的比较，是否明文？ 直接明文'''
+#     if l > L:
+#         EP = nodecnt + 1
+#         for _ in range(l, L, -1):
+#             nodecnt += 1
+#             # ite.append(q_idx)
+#             ite[nodecnt] = q_idx
+#             # '''wrong'''
+#             # edge.append([])
+#     for lc in range(L, l, -1):
+#         W = search_layer(q_idx, current_ep, 1, lc)
+#         '''返回点 用 [] 存是否有问题？ []'''
+#         if not W: break
+#         assert len(W) == 1
+#         current_ep = nxt(W)
+#     for lc in range(min(L, l), -1, -1):
+#         m_max_lc = MMAX0 if lc == 0 else Mmax_param
+#         nodecnt += 1
+#         # ite.append(q_idx)
+#         ite[nodecnt] = q_idx
+#         W = search_layer(q_idx, current_ep, efConstruction_param, lc)
+#         if not W:
+#             # edge.append([])
+#             # '''wrong''' 
+#             continue
+#         neighbors = select_neighbors_simple(q_idx, W, M_param, lc)
+#         # edge.append(neighbors)
+#         '''这里不知道个数，需要再处理。目前的处理是用 edgelen 来记录长度。append 就是在 edgelen 位置赋值'''
+#         edge[nodecnt] = neighbors
+#         edgelen[nodecnt] = len(neighbors)
+#         new_node_graph_idx = nodecnt
+#         for e_node_idx in neighbors:
+#             # edge[e_node_idx].append(new_node_graph_idx)
+#             # '''wrong'''
+#             edge[e_node_idx][edgelen[e_node_idx]] = new_node_graph_idx
+#             edgelen[e_node_idx] += 1
+#             if len(edge[e_node_idx]) > m_max_lc:
+#             # '''这个比较不是明文if ，要再处理'''
+#             # if edgelen[e_node_idx] > m_max_lc:
+#                 # '''没了'''
+#                 e_conn = edge[e_node_idx]
+#                 e_new_conn = select_neighbors_simple(ite[e_node_idx], e_conn, m_max_lc, lc)
+#                 edge[e_node_idx] = e_new_conn
+#                 edgelen[e_node_idx] = len(e_new_conn)
+#                 # '''这里传的是 [] 还是 oram 要再决定一下。或者说 oram 型的怎么传成 [] ，直接[] '''
+#         current_ep = nxt(W)
+#     if l > L:
+#         L = l
 
 def k_nn_search(q_idx, k_param, ef_param):
     return
@@ -163,27 +142,6 @@ def init():
     if N >= 3:
         for i in range(1, 4):
             print_ln("节点 %s: %s", i, [node[i][j].reveal() for j in range(D)])
-
-
-b_Q = MaxHeapQ(max_size = K + 2)
-def bruteforce_for_query_heap(q_idx):
-    """暴力搜索查询点 q_idx 的 K 个最近邻"""
-    start_time = time.time()
-    for i in range(1, N + 1):
-        dist = distance_query_to_node(q_idx, i)
-        b_Q.update(i, dist)
-        b_Q.pop(b_Q.size > K)
-    ret = [b_Q.pop()[1].reveal() for _ in range(K)]
-    # ret.sort()
-    end_time = time.time()
-    duration_ms = (end_time - start_time) * 1000
-    print_ln("\n暴力搜索结果:")
-    print_ln('序号: %s',ret)
-    # for r_idx in ret:
-    #     dist = distance_query_to_node(q_idx, r_idx)
-    #     print_ln("%s || %s", [node[r_idx][_].reveal() for _ in range(D)], dist.reveal())
-    print_ln("查询耗时: %s ms", duration_ms)
-    return ret
 
 def bruteforce_for_query_sort(q_idx):
     """暴力搜索查询点 q_idx 的 K 个最近邻，用 sort"""
