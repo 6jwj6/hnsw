@@ -17,8 +17,6 @@ EF_CONSTRUCTION = 5  # 构建索引时的搜索范围大小
 K = 3  # K-NN搜索中的K值
 
 # 数据和图结构
-# 'node' 将在 init() 中加载或在 gendata() 后填充
-# node = [[0] * D for _ in range(N + 1)] # node[0] 不使用
 node =  OptimalORAM(size = N + 1, value_length = D)
 edge = [[]]  # 邻接表, edge[0] 作为占位符
 ite = [0]   # 索引到节点ID的映射, ite[0] 作为占位符
@@ -28,7 +26,6 @@ L = 0  # 当前最高层数
 EP = 1  # 入口点 (entry point) 的索引
 nodecnt = 0  # 图中节点的总数 (跨所有层)
 ML = 1 / math.log(M)
-
 
 def tryoram():
     x = OptimalORAM(size = 32, value_length = 4)
@@ -40,11 +37,7 @@ def tryoram():
     print_ln('%s', x[1][2].reveal())
 
 def tryheapq():
-    Q = MaxHeapQ(max_size=100, # Defines value range [0, max_size-1] and heap capacity
-            #   oram_type=OptimalORAM,
-            #   int_type=sint,
-            #   entry_size=(10, 6) # (priority_bits, value_bits) for HeapEntry
-    )
+    Q = MaxHeapQ(max_size=100)
 
     for i in range(10):
         op = sint.get_input_from(0)
@@ -144,9 +137,9 @@ def bruteforce_for_query(q_idx):
     duration_ms = (end_time - start_time) * 1000
     print_ln("\n暴力搜索结果:")
     print_ln('序号: %s',ret)
-    for r_idx in ret:
-        dist = distance_query_to_node(q_idx, r_idx)
-        print_ln("%s || %s", [node[r_idx][_].reveal() for _ in range(D)], dist.reveal())
+    # for r_idx in ret:
+    #     dist = distance_query_to_node(q_idx, r_idx)
+    #     print_ln("%s || %s", [node[r_idx][_].reveal() for _ in range(D)], dist.reveal())
     print_ln("查询耗时: %s ms", duration_ms)
     return ret
 
@@ -189,7 +182,7 @@ for i in range(1, N + 1):
         print_ln("已插入节点数 = %s / %s", i, N)
 end_insert = time.time()
 duration_insert = end_insert - start_insert 
-print("\nHNSW 图构建完成", file=sys.stderr)
+print_ln("\nHNSW 图构建完成")
 
 
 nq = 21

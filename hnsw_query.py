@@ -247,14 +247,15 @@ def bruteforce_for_query(q_idx):
         heapq.heappush(W, (-dist, i))
         if len(W) > K:
             heapq.heappop(W)
-    ret = sorted([item[1] for item in W], reverse=True)
+    ret = [item[1] for item in W]#sorted([item[1] for item in W], reverse=True)
     end_time = time.time()
     duration_ms = (end_time - start_time) * 1000
     print("\n暴力搜索结果:", file=sys.stderr)
-    print("序号：", ' '.join(map(str, ret)), file=sys.stderr)
-    for r_idx in ret:
-        dist = distance_query_to_node(q_idx, r_idx)
-        print(f"{node[r_idx]} || {dist:.4f}", file=sys.stderr)
+    # print("序号：", ' '.join(map(str, ret)), file=sys.stderr)
+    print('序号: ', ret, file=sys.stderr)
+    # for r_idx in ret:
+    #     dist = distance_query_to_node(q_idx, r_idx)
+        # print(f"{node[r_idx]} || {dist:.4f}", file=sys.stderr)
     print(f"查询耗时: {duration_ms:.4f} ms", file=sys.stderr)
     return ret
 
@@ -296,10 +297,8 @@ def main():
 
     ave_recall = 0.0
     # --- 修改开始 (6/6): 修改查询循环和函数调用 ---
-    for i in range(nq):
+    for q_idx in range(nq):
         # 现在的 q_idx 就是 querynode 列表的索引 (0, 1, 2...)
-        q_idx = i
-        
         print("\n--------------------------------", file=sys.stderr)
         q_vec = querynode[q_idx]
         q_vec_str = ", ".join(map(str, q_vec))
@@ -312,10 +311,11 @@ def main():
         end_query = time.time()
         duration_query_ms = (end_query - start_query) * 1000
 
-        print("序号: ",' '.join(map(str, knn_res)), file=sys.stderr)
-        for res_idx in knn_res:
-            dist = distance_query_to_node(q_idx, res_idx)
-            print(f"{node[res_idx]} || {dist:.4f}", file=sys.stderr)
+        # print("序号: ",' '.join(map(str, knn_res)), file=sys.stderr)
+        print("序号: ", knn_res, file=sys.stderr)
+        # for res_idx in knn_res:
+        #     dist = distance_query_to_node(q_idx, res_idx)
+            # print(f"{node[res_idx]} || {dist:.4f}", file=sys.stderr)
         print(f"查询耗时: {duration_query_ms:.4f} ms", file=sys.stderr)
 
         # 调用查询专用的暴力搜索函数
