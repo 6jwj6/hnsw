@@ -3,7 +3,7 @@ import random
 import heapq
 import time
 import sys
-
+import os
 # --- 全局常量和变量 ---
 MINX = -1000
 MAXX = 1000
@@ -29,11 +29,24 @@ nodecnt = 0  # 图中节点的总数 (跨所有层)
 ML = 1 / math.log(M)
 
 # --- 辅助函数 ---
-
 def gendata(num=N, dim=D):
     """生成随机数据并写入 data.txt"""
+    
+    # --- 核心修改部分 ---
+    # 1. 获取当前脚本文件所在的目录
+    # __file__ 是一个特殊变量，代表当前脚本文件的路径
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # 2. 使用 os.path.join 构建出目标文件的完整绝对路径
+    #    os.path.join 会自动处理不同操作系统下的路径分隔符（/ 或 \）
+    output_path = os.path.join(script_dir, "data.txt")
+    # --- 结束修改 ---
+    
     print("开始生成数据...", file=sys.stderr)
-    with open("data.txt", "w") as f:
+    print(f"将要写入文件到: {output_path}", file=sys.stderr) # 增加打印，方便确认路径
+    
+    # 使用构建好的绝对路径来打开文件
+    with open(output_path, "w") as f:
         for i in range(num):
             line = ' '.join(str(random.randint(MINX, MAXX)) for _ in range(dim))
             f.write(line + "\n")
@@ -226,24 +239,46 @@ def k_nn_search(q_idx, k_param, ef_param):
     return [item[1] for item in sorted(result_heap, key=lambda x: x[0], reverse=True)]
 
 # --- 初始化和主程序 ---
-
 def init():
     """从文件加载数据"""
+    
+    # --- 核心修改部分 ---
+    # 1. 获取当前脚本文件所在的目录的绝对路径
+    #    __file__ 是一个特殊变量，代表当前脚本文件的路径
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # 2. 使用 os.path.join 构建出 data.txt 的完整绝对路径
+    #    这确保了无论从哪里运行脚本，路径总是正确的
+    data_path = os.path.join(script_dir, "data.txt")
+    # --- 结束修改 ---
+
     print("开始读取数据...", file=sys.stderr)
+    # 增加一行打印，方便我们确认程序正在从正确的路径读取文件
+    print(f"尝试从以下路径读取文件: {data_path}", file=sys.stderr)
+
     try:
-        with open("data.txt", "r") as f:
+        # 使用构建好的绝对路径来打开文件
+        with open(data_path, "r") as f:
             for i in range(1, N + 1):
                 line = f.readline()
                 if not line: break
+                # 假设 node 是一个已定义的字典或列表
                 node[i] = [int(x) for x in line.strip().split()]
+                
     except FileNotFoundError:
-        print("data.txt 未找到。请先运行 gendata()。", file=sys.stderr)
+        # 更新错误信息，显示我们尝试查找的完整路径
+        print(f"错误: 在路径 {data_path} 未找到 data.txt。", file=sys.stderr)
+        print("请先运行 gendata() 生成数据文件。", file=sys.stderr)
         exit(1)
+        
     print("完成读取 data.txt", file=sys.stderr)
     
-    # 打印前3个节点以供验证
-    for i in range(1, 4):
-        print(f"{node[i]}", file=sys.stderr)
+    # 打印前3个节点以供验证 (这部分代码保持不变)
+    # 确保在调用此函数前 node 已经被初始化为一个字典
+    if len(node) >= 3:
+        for i in range(1, 4):
+            print(f"节点 {i}: {node[i]}", file=sys.stderr)
+
 
 def bruteforce(q_idx):
     """暴力搜索 q_idx 的 K 个最近邻以供验证"""
