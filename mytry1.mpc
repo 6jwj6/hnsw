@@ -77,3 +77,40 @@ def _():
     
 print_ln('-'*106)
 
+
+
+# # ---------------------------------------Part 1-----------------------------
+# # 在你的循环之前，先清空或重新初始化 Q
+# # ...
+
+# 第一次插入 (value=100, 映射到地址 36)
+# Q.update(130, sint(200), sint(1))
+# # Q.update(100, sint(200), sint(1))      work same
+# print_ln("Inserted value 100 with prio 200")
+# print_ln('size = %s',Q.size.reveal())
+# # 第二次插入 (value=36, 也映射到地址 36，会覆盖上面的索引信息)
+# Q.update(36, sint(50), sint(1))
+# # Q.update(36, sint(50), sint(1))
+# print_ln("Inserted value 36 with prio 50")
+# print_ln('size = %s',Q.size.reveal())
+# # 现在堆里应该有 prio=200 和 prio=50 的两个元素
+# # 最小值应该是 50
+# entry = Q.pop(sint(1))
+# print_ln("Popped value is %s, prio is %s", entry[1].reveal(), entry[0].reveal())
+# print_ln('size = %s',Q.size.reveal())
+# # 应该会弹出 36, 50
+
+# # 现在再弹一次，应该弹出 100, 200
+# entry = Q.pop(sint(1))
+# print_ln("Popped value is %s, prio is %s", entry[1].reveal(), entry[0].reveal())
+# print_ln('size = %s',Q.size.reveal())
+
+# # 现在尝试删除 100
+# # 这个操作很可能会失败，或者产生意想不到的结果，因为它在 value_index 中的记录已经被 36 的插入给覆盖了！
+# Q.update(100, sint(-32), sint(1))
+# print_ln('size = %s',Q.size.reveal())
+# entry = Q.pop(sint(1))
+# print_ln("Tried to delete 100, but popped: %s", entry[0].reveal())
+# print_ln('size = %s',Q.size.reveal())
+
+
