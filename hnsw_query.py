@@ -15,7 +15,7 @@ MMAX0 = 2 * M
 MMAX = M
 N = 10000
 EF_CONSTRUCTION = 10
-K = 1
+K = 2
 
 # --- 数据容器分离 ---
 node = []      # 存储主数据集, 索引 0-N-1
@@ -100,7 +100,7 @@ def search_layer(q_idx, ep, ef, lc):
                     if len(W) > ef:
                         heapq.heappop(W)
     # return [item[1] for item in sorted(W, key=lambda x: x[0], reverse=True)]
-    print(f"rec = {rec}  fl = {fl}")
+    # print(f"rec = {rec}  fl = {fl}")
     '''可以发现实际while循环次数很小，远不到ef*ef'''
     '''rec位置换一下， 可以发现扩张的次数也不大。'''
     '''和ef、N 正相关，和 M 负相关， 和 K、D 没关系'''
@@ -161,7 +161,7 @@ def search_layer_for_query(q_idx, ep, ef, lc):
                     heapq.heappush(W, (-dist_e, e_node_idx))
                     if len(W) > ef:
                         heapq.heappop(W)
-    print(f"rec = {rec} rec2 = {rec2} fl = {fl}")
+    # print(f"rec = {rec} rec2 = {rec2} fl = {fl}")
     global maxloop
     maxloop = max(maxloop, rec)
     return [item[1] for item in sorted(W, key=lambda x: x[0], reverse=True)]
@@ -255,18 +255,21 @@ def k_nn_search(q_idx, k_param, ef_param):
         W = search_layer_for_query(q_idx, ep, 1, lc)
         assert len(W) == 1
         ep = nxt(W)
+        # ep = nxt(ep)
+        '''几乎是一样的，直接跳过非底层的search'''
 
     # 调用查询专用版本
     W = search_layer_for_query(q_idx, ep, ef_param, 0)
     
-    result_heap = []
-    for x_node_idx in W:
-        dist = distance_query_to_node(q_idx, ite[x_node_idx])
-        heapq.heappush(result_heap, (-dist, ite[x_node_idx]))
-        if len(result_heap) > k_param:
-            heapq.heappop(result_heap)
-            
-    return [item[1] for item in sorted(result_heap, key=lambda x: x[0], reverse=True)]
+    # result_heap = []
+    # for x_node_idx in W:
+    #     dist = distance_query_to_node(q_idx, ite[x_node_idx])
+    #     heapq.heappush(result_heap, (-dist, ite[x_node_idx]))
+    #     if len(result_heap) > k_param:
+    #         heapq.heappop(result_heap)
+      
+    # return [item[1] for item in sorted(result_heap, key=lambda x: x[0], reverse=True)]
+    return [ite[x] for x in W[:K:]]
 # --- 修改结束 (4/6) ---
 
 # --- 初始化和主程序 ---
@@ -309,9 +312,9 @@ def bruteforce_for_query(q_idx):
     print("\n暴力搜索结果:", file=sys.stderr)
     # print("序号：", ' '.join(map(str, ret)), file=sys.stderr)
     print('序号: ', ret, file=sys.stderr)
-    # for r_idx in ret:
-    #     dist = distance_query_to_node(q_idx, r_idx)
-        # print(f"{node[r_idx]} || {dist:.4f}", file=sys.stderr)
+    for r_idx in ret:
+        dist = distance_query_to_node(q_idx, r_idx)
+        print(f"{node[r_idx]} || {dist:.4f}", file=sys.stderr)
     print(f"查询耗时: {duration_ms:.4f} ms", file=sys.stderr)
     return ret
 
@@ -375,9 +378,9 @@ def main():
 
         # print("序号: ",' '.join(map(str, knn_res)), file=sys.stderr)
         print("序号: ", knn_res, file=sys.stderr)
-        # for res_idx in knn_res:
-        #     dist = distance_query_to_node(q_idx, res_idx)
-            # print(f"{node[res_idx]} || {dist:.4f}", file=sys.stderr)
+        for res_idx in knn_res:
+            dist = distance_query_to_node(q_idx, res_idx)
+            print(f"{node[res_idx]} || {dist:.4f}", file=sys.stderr)
         print(f"查询耗时: {duration_query_ms:.4f} ms", file=sys.stderr)
 
         # 调用查询专用的暴力搜索函数

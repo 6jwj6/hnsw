@@ -5,8 +5,8 @@ from Programs.Source.HeapQ import MinHeapQ,MaxHeapQ
 import time
 from Compiler.mpc_math import *
 # --- 全局常量和变量 ---
-MINX = -1000
-MAXX = 1000
+MINX = -100
+MAXX = 100
 
 D = 4  # 向量维度
 M = 5  # 每个节点的最大连接数 (除第0层外)
@@ -41,14 +41,14 @@ def distance_query_to_node(q_idx, node_idx):
         res = res + (vec1[i]-vec2[i]) * (vec1[i]-vec2[i])
     return res
 
-def distance_node_to_node(idx1, idx2):
-    """计算主数据集中两个节点之间的距离"""
-    vec1 = node[idx1]
-    vec2 = node[idx2]
-    res = sint(0)
-    for i in range(D):
-        res = res + (vec1[i]-vec2[i]) * (vec1[i]-vec2[i])
-    return res
+# def distance_node_to_node(idx1, idx2):
+#     """计算主数据集中两个节点之间的距离"""
+#     vec1 = node[idx1]
+#     vec2 = node[idx2]
+#     res = sint(0)
+#     for i in range(D):
+#         res = res + (vec1[i]-vec2[i]) * (vec1[i]-vec2[i])
+#     return res
 
 def nxt(W):
     return [i + 1 for i in W]
@@ -104,17 +104,18 @@ def search_layer_for_query(q_idx, ep, ef, lc):
     # return [item[1] for item in sorted(W, key=lambda x: x[0], reverse=True)]
     return W.get_vector_by_indices(None,1)[:ef:]
 
-def select_neighbors_simple(q_idx, C, M_conn, lc):
-    R = []
-    W = sint.Tensor([len(C), 2]) # 工作小顶堆 (距离, 图索引)
-    for i in range(len(C)):
-        W[i] = (distance_node_to_node(q_idx, ite[C[i]]), C[i])
-    W.sort()
-    R = W.get_vector_by_indices(None, 1)[:M_conn:]
-    return R
+# def select_neighbors_simple(q_idx, C, M_conn, lc):
+#     R = []
+#     W = sint.Tensor([len(C), 2]) # 工作小顶堆 (距离, 图索引)
+#     for i in range(len(C)):
+#         W[i] = (distance_node_to_node(q_idx, ite[C[i]]), C[i])
+#     W.sort()
+#     R = W.get_vector_by_indices(None, 1)[:M_conn:]
+#     return R
 
 # def select_neighbors_heuristic(q_idx, C, M_conn, lc, extend_candidates=False, keep_pruned_connections=True):
-'''heap效果不佳'''
+#     '''heap效果不佳'''
+#     return
 
 # def insert(q_idx, M_param, Mmax_param, efConstruction_param, mL_param):
 #     global L, EP, nodecnt
@@ -171,7 +172,27 @@ def select_neighbors_simple(q_idx, C, M_conn, lc):
 #         L = l
 
 def k_nn_search(q_idx, k_param, ef_param):
-    return
+    W = []
+    ep = [EP]
+    
+    for lc in range(L, 0, -1):
+        # 调用查询专用版本
+        W = search_layer_for_query(q_idx, ep, 1, lc)
+        assert len(W) == 1
+        ep = nxt(W)
+
+    # 调用查询专用版本
+    W = search_layer_for_query(q_idx, ep, ef_param, 0)
+    
+    # result_heap = []
+    # for x_node_idx in W:
+    #     dist = distance_query_to_node(q_idx, ite[x_node_idx])
+    #     heapq.heappush(result_heap, (-dist, ite[x_node_idx]))
+    #     if len(result_heap) > k_param:
+    #         heapq.heappop(result_heap)
+            
+    # return [item[1] for item in sorted(result_heap, key=lambda x: x[0], reverse=True)]
+    return [ite[x] for x in W[:K:]]
 
 # --- 初始化和主程序 ---
 def init():

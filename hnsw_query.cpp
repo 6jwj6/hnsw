@@ -16,8 +16,8 @@ using namespace std;
 #define prt(x) cerr << #x << " : " << x << endl;
 
 // --- 全局常量和变量 ---
-const int minx = -1000;
-const int maxx = 1000;
+const int minx = -100;
+const int maxx = 100;
 
 const int d = 4;
 const int M = 6;
@@ -56,6 +56,15 @@ void gendata(int num = n, int dim = d) {
     cerr << "done writing data.txt\n";
 }
 
+void genquerynode(int num, int dim = d){
+    std::uniform_int_distribution<int> uniform_dist(minx, maxx);
+    foru(i, 0, num-1) {
+        querynode.emplace_back(vector<int>(dim, 0));
+        foru(j, 0, dim-1) {
+            querynode[i][j] = uniform_dist(gen);
+        }
+    }
+}
 // --- 修改: 创建两个版本的 distance 函数，逻辑与原始版本完全相同 ---
 int distance_node_to_node(int idx1, int idx2) {
     vector<int>& nq = node[idx1];
@@ -130,6 +139,7 @@ vector<int> SEARCH_LAYER(int q, vector<int> ep, int ef, int lc) {
 
 // --- 修改: 为查询流程创建 search_layer_for_query, 逻辑与原始 SEARCH_LAYER 完全一致 ---
 vector<int> SEARCH_LAYER_FOR_QUERY(int q, vector<int> ep, int ef, int lc) {
+    // if (lc > 0) return ep;
     unordered_set<int> v;
     for (auto x : ep)
         v.insert(x);
@@ -280,6 +290,7 @@ vector<int> K_NN_SEARCH(int q, int K_val, int ef_val) {
         W = SEARCH_LAYER_FOR_QUERY(q, ep, 1, lc);
         assert((int)(W.size()) == 1);
         ep = NXT(W);
+        // ep = NXT(ep);
     }
     W = SEARCH_LAYER_FOR_QUERY(q, ep, ef_val, 0);
 
@@ -383,14 +394,14 @@ signed main() {
     // 省略了原始代码中一些统计打印
 
     // --- 修改: 查询点存入 querynode, 并修改调用方式 ---
-    int nq = 21;
+    int nq = 1000;
     cerr << "Number of queries: " << nq << endl;
-
-    querynode.assign(nq, vector<int>(d));
-    foru(i, 0, nq - 1) {
-        double val = (i - (double)(nq - 1) / 2.0) * ((double)(maxx - minx) / (double)(nq - 1));
-        foru(j, 0, d - 1) querynode[i][j] = static_cast<int>(val);
-    }
+    genquerynode(nq);
+    // querynode.assign(nq, vector<int>(d));
+    // foru(i, 0, nq - 1) {
+    //     double val = (i - (double)(nq - 1) / 2.0) * ((double)(maxx - minx) / (double)(nq - 1));
+    //     foru(j, 0, d - 1) querynode[i][j] = static_cast<int>(val);
+    // }
     cerr << "\nnode.size : " << n << endl;
     cerr << "querynode.size : " << querynode.size() << endl;
 
