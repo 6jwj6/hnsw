@@ -325,6 +325,9 @@ def genquerynode(num, dim=D):
         querynode.append([random.randint(MINX, MAXX) for _ in range(dim)])
     print("完成写入查询数据", file=sys.stderr)
 
+def printgraph():
+    return
+
 def main():
     """主执行函数"""
     gendata()
@@ -348,6 +351,7 @@ def main():
     duration_insert = end_insert - start_insert
     print("\nHNSW 图构建完成", file=sys.stderr)
 
+    printgraph()
     # --- 修改开始 (5/6): 将查询点存入新的 querynode 列表 ---
     nq = 1000
     genquerynode(nq)

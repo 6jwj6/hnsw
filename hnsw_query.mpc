@@ -41,14 +41,14 @@ def distance_query_to_node(q_idx, node_idx):
         res = res + (vec1[i]-vec2[i]) * (vec1[i]-vec2[i])
     return res
 
-# def distance_node_to_node(idx1, idx2):
-#     """计算主数据集中两个节点之间的距离"""
-#     vec1 = node[idx1]
-#     vec2 = node[idx2]
-#     res = sint(0)
-#     for i in range(D):
-#         res = res + (vec1[i]-vec2[i]) * (vec1[i]-vec2[i])
-#     return res
+def distance_node_to_node(idx1, idx2):
+    """计算主数据集中两个节点之间的距离"""
+    vec1 = node[idx1]
+    vec2 = node[idx2]
+    res = sint(0)
+    for i in range(D):
+        res = res + (vec1[i]-vec2[i]) * (vec1[i]-vec2[i])
+    return res
 
 def nxt(W):
     return [i + 1 for i in W]
