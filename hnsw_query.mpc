@@ -1,0 +1,212 @@
+from Compiler.library import *
+from Compiler.types import *
+from Compiler.oram import *
+from Programs.Source.HeapQ import MinHeapQ,MaxHeapQ
+import time
+from Compiler.mpc_math import *
+# --- 全局常量和变量 ---
+MINX = -100
+MAXX = 100
+
+D = 4  # 向量维度
+M = 5  # 每个节点的最大连接数 (除第0层外)
+MMAX0 = 2 * M  # 第0层的最大连接数
+MMAX = M
+N = 10  # 数据点数量
+EF_CONSTRUCTION = 5  # 构建索引时的搜索范围大小
+K = 3  # K-NN搜索中的K值
+Maxloop = EF_CONSTRUCTION*EF_CONSTRUCTION
+NlgN = N * (int)(math.log2(N))
+# 数据和图结构
+node =  OptimalORAM(size = N + 1, value_length = D)
+querynode = []
+# edge = OptimalORAM(size = N + 1, value_length = MMAX0 + 5)  # 邻接表, edge[0] 作为占位符
+# edgelen = OptimalORAM(size = N + 1)
+edge = [[0 for _ in range(MMAX0 + 5)] for _ in range(N)]
+edgelen = [0 for _ in range(N + 1)]
+ite = OptimalORAM(size = NlgN)   # 索引到节点ID的映射, ite[0] 作为占位符
+vis =  OptimalORAM(size = NlgN)
+# HNSW 算法状态
+L = 0  # 当前最高层数
+EP = 1  # 入口点 (entry point) 的索引
+nodecnt = 0  # 图中节点的总数 (跨所有层)
+ML = 1 / math.log(M)
+
+def distance_query_to_node(q_idx, node_idx):
+    """计算一个查询点和一个主数据集节点之间的距离"""
+    vec1 = querynode[q_idx]
+    vec2 = node[node_idx]
+    res = sint(0)
+    for i in range(D):
+        res = res + (vec1[i]-vec2[i]) * (vec1[i]-vec2[i])
+    return res
+
+# def distance_node_to_node(idx1, idx2):
+#     """计算主数据集中两个节点之间的距离"""
+#     vec1 = node[idx1]
+#     vec2 = node[idx2]
+#     res = sint(0)
+#     for i in range(D):
+#         res = res + (vec1[i]-vec2[i]) * (vec1[i]-vec2[i])
+#     return res
+
+def nxt(W):
+    return [i + 1 for i in W]
+
+def search_layer_for_query(q_idx, ep, ef, lc):
+    v = OptimalORAM(N)
+    # 调用 query-to-node 距离函数
+    # C = [(distance_query_to_node(q_idx, ite[x]), x) for x in ep]
+    # heapq.heapify(C)
+    # W = [(-distance_query_to_node(q_idx, ite[x]), x) for x in ep]
+    # heapq.heapify(W)
+    MD = 10000000
+    MC = ef*ef
+    MW = ef*ef
+    C = sint.Tensor([MC+1, 2])
+    C.assign_all(MD)
+    C[0] = (distance_query_to_node(q_idx, ite[ep[0]]), ep[0])
+    W = sint.Tensor([MW+1, 2])
+    W.assign_all(MD)
+    W[0] = (-distance_query_to_node(q_idx, ite[ep[0]]), ep[0])
+    lenW = sint(1)
+    running = MemValue(sint(1))
+    maxloop = 100
+    # while C:
+    @for_range(maxloop)
+    def _(_):
+        dist_c, c_node_idx = C[0]
+        C[0] = (MD, 0)
+        # if dist_c > -W[0][0]:
+        # running.write(running.bit_and( dist_c <= -W[0][0]))
+            # print(f"break rec = {rec}")
+            # '''都是 break 掉的'''
+            # break
+        for index, e_node_idx in enumerate(edge[c_node_idx]):
+            insert_flag = (v[e_node_idx] != q_idx)
+            # if e_node_idx not in v:
+            dist_e = distance_query_to_node(q_idx, ite[e_node_idx])
+                # v.add(e_node_idx)
+            v[e_node_idx] = q_idx 
+                # if len(W) < ef or dist_e < -W[0][0]:
+            tp = insert_flag.if_else((dist_e,e_node_idx), (MD,0))
+                    # heapq.heappush(C, (dist_e, e_node_idx))
+                    # heapq.heappush(W, (-dist_e, e_node_idx))
+                    # if len(W) > ef:
+                    #     heapq.heappop(W)
+            C[MC-index] = tp
+            W[MW-index] = tp
+        C.sort()
+        W.sort()
+    # return [item[1] for item in sorted(W, key=lambda x: x[0], reverse=True)]
+    return W.get_vector_by_indices(None,1)[:ef:]
+
+def k_nn_search(q_idx, k_param, ef_param):
+    W = []
+    ep = [EP]
+    
+    for lc in range(L, 0, -1):
+        # 调用查询专用版本
+        # W = search_layer_for_query(q_idx, ep, 1, lc)
+        # assert len(W) == 1
+        # ep = nxt(W)
+        ep = nxt(ep)
+
+    # 调用查询专用版本
+    W = search_layer_for_query(q_idx, ep, ef_param, 0)
+    
+    return [ite[x] for x in W[:K:]]
+
+# --- 初始化和主程序 ---
+def init():
+    """从文件加载数据"""
+    print_ln("开始读取数据...")
+    tmp = sint.Array(D)
+    for i in range(1, N + 1):
+        tmp.input_from(1)
+        node[i] = [*tmp]
+    print_ln("完成读取 data.txt")
+    
+    # 打印前3个节点以供验证 (这部分代码保持不变)
+    if N >= 3:
+        for i in range(1, 4):
+            print_ln("节点 %s: %s", i, [node[i][j].reveal() for j in range(D)])
+            
+@function_block
+def bruteforce_for_query_sort(q_idx):
+    """暴力搜索查询点 q_idx 的 K 个最近邻，用 sort"""
+    start_timer(timer_id = 111)
+    start_time = time.time()
+    sQ = sint.Tensor([N, 2])
+    # for i in range(1, N+1):
+    @for_range_opt(1, N+1)
+    def _(i):
+        dist = distance_query_to_node(q_idx, i)
+        sQ[i - 1] = (i, dist)
+    sQ.sort(key_indices = [1])
+    sQ = sQ.get_vector_by_indices(None, 0)[:K:]
+    end_time = time.time()
+    stop_timer(timer_id = 111)
+    duration_ms = (end_time - start_time) * 1000
+    print_ln("\n暴力搜索结果:")
+    print_ln('序号: %s', [_.reveal() for _ in sQ])
+    print_ln("查询耗时: %s ms", duration_ms)
+    return sQ
+
+'''-------------------主程序-----------------------------'''
+init()
+print_ln('-'*50+'RESULT'+'-'*50)
+print_ln("*"*50)
+print_ln("N (数据点数): %s", N)
+print_ln("D (维度): %s", D)
+print_ln("M (最大连接数): %s", M)
+print_ln("mL (层级因子): %s", ML)
+print_ln("K (近邻数): %s", K)
+print_ln("efConstruction: %s", EF_CONSTRUCTION)
+print_ln("*"*50)
+print_ln("\nHNSW 图读取完成")
+
+
+nq = 21
+# querynode = [] # 确保查询列表是空的
+# for i in range(nq):
+#     val = ((i - (nq - 1) / 2) * ((MAXX - MINX) / (nq - 1)))
+#     querynode.append([sint(int(val))] * D)
+
+
+ave_recall = 0.0
+for q_idx in range(9,11):
+    # 现在的 q_idx 就是 querynode 列表的索引 (0, 1, 2...)
+
+    print_ln("\n--------------------------------")
+    print_ln("当前查询点 (索引 %s) 为 (%s)",q_idx,
+                [querynode[q_idx][_].reveal() for _ in range(D)])
+    
+    # print_ln("\nq 的 K-ANN 搜索结果:")
+    # start_query = time.time()
+    # # 调用查询专用函数 k_nn_search，并传递查询索引
+    knn_res = k_nn_search(q_idx, K, EF_CONSTRUCTION)
+    # end_query = time.time()
+    # duration_query_ms = (end_query - start_query) * 1000
+
+    # print_ln("序号: %s", knn_res)
+    # for res_idx in knn_res:
+    #     dist = distance_query_to_node(q_idx, res_idx)
+    #     print_ln("%s || %s", res_idx, dist)
+    # print_ln("查询耗时: %s ms", duration_query_ms)
+
+    # 调用查询专用的暴力搜索函数    
+    # brt_res = bruteforce_for_query_heap(q_idx)
+    brt_res = bruteforce_for_query_sort(q_idx)
+    # brt_set = set(brt_res)
+    # ccnt = sum(1 for res_idx in knn_res if res_idx in brt_set)
+    # recall = ccnt / K
+    # ave_recall += recall
+    # print(f"召回率: {recall:.4f}", file=sys.stderr)
+    # print("-------------------------------------\n", file=sys.stderr)
+# # --- 修改结束 (6/6) ---
+    
+# print(f"平均召回率: {ave_recall / nq:.4f}", file=sys.stderr)
+# print(f"插入耗时: {duration_insert:.4f} seconds", file=sys.stderr)
+
+print_ln('-'*50+'END'+'-'*50)
