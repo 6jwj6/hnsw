@@ -12,16 +12,16 @@ D = 4  # 向量维度
 M = 5  # 每个节点的最大连接数 (除第0层外)
 MMAX0 = 2 * M  # 第0层的最大连接数
 MMAX = M
-N = 100  # 数据点数量
+N = 10000  # 数据点数量
 EF_CONSTRUCTION = 5  # 构建索引时的搜索范围大小
 K = 3  # K-NN搜索中的K值
 NlgN = N * (int)(math.log2(N))
 # 数据和图结构
-# node =  OptimalORAM(size = N + 1, value_length = D)
-node = [[] for _ in range(N+2)]
+node =  OptimalORAM(size = N + 1, value_length = D)
 # edge = OptimalORAM(size = N + 1, value_length = MMAX0 + 5)  # 邻接表, edge[0] 作为占位符
 # edgelen = OptimalORAM(size = N + 1)
-edge = [[]]
+edge = [[0 for _ in range(MMAX0 + 5)] for _ in range(N)]
+edgelen = [0 for _ in range(N + 1)]
 ite = OptimalORAM(size = NlgN)   # 索引到节点ID的映射, ite[0] 作为占位符
 
 # HNSW 算法状态
@@ -29,6 +29,21 @@ L = 0  # 当前最高层数
 EP = 1  # 入口点 (entry point) 的索引
 nodecnt = 0  # 图中节点的总数 (跨所有层)
 ML = 1 / math.log(M)
+
+def trysort():
+    Q = sint.Tensor([1000, 2])
+    for i in range(1000):
+        op = sint.get_input_from(1)
+        x = sint.get_input_from(1)
+        x = x + 100
+        pos = i + 130
+        Q[i] = (x, pos)
+    # Q.sort(key_indices = [1])
+    Q.sort()
+    print_ln('%s',Q.reveal_list())
+    s = Q.get_vector_by_indices(None, 1)
+    print_ln('lens = %s', len(s))
+    print_ln('%s', s.reveal())
 
 def tryoram():
     x = OptimalORAM(size = 32, value_length = 4)
@@ -41,13 +56,19 @@ def tryoram():
 
 def tryheapq():
     Q = MaxHeapQ(max_size=100)
-
+    
+    print_ln('%s', Q.pop()[0].reveal())
+    print_ln('%s', Q.pop()[0].reveal())
+    print_ln('%s', Q.pop()[0].reveal())
+    print_ln('%s', Q.pop()[0].reveal())
+    print_ln('%s', Q.pop()[0].reveal())
     for i in range(10):
         op = sint.get_input_from(0)
         x = sint.get_input_from(0)
         x = x + 100
         pos = i + 130
         Q.update(pos, x, op==1)
+    
         entry_Pop = Q.pop(op==0)
         entry_Top = Q.top(op==2)
         
@@ -125,7 +146,28 @@ def search_layer_for_query(q_idx, ep, ef, lc):
     return
 
 def select_neighbors_heuristic(q_idx, C, M_conn, lc, extend_candidates=False, keep_pruned_connections=True):
-    return
+    R, W, Wd = [], [], []
+    for x in C:
+        heapq.heappush(W, (distance_node_to_node(q_idx, ite[x]), x))
+
+    # # ... (其余逻辑不变)
+    # if extend_candidates:
+    #     st = set(C)
+    #     for e in C:
+    #         for e_adj in edge[e]:
+    #             if e_adj not in st:
+    #                 st.add(e_adj)
+    #                 heapq.heappush(W, (distance_node_to_node(q_idx, ite[e_adj]), e_adj))
+    while W and len(R) < M_conn:
+        dist_e, e_node_idx = heapq.heappop(W)
+        if not R or dist_e < R[0][0]:
+            heapq.heappush(R, (dist_e, e_node_idx))
+        else:
+            heapq.heappush(Wd, (dist_e, e_node_idx))
+    if keep_pruned_connections:
+        while Wd and len(R) < M_conn:
+            heapq.heappush(R, heapq.heappop(Wd))
+    return [item[1] for item in R]
 
 def insert(q_idx, M_param, Mmax_param, efConstruction_param, mL_param):
     global L, EP, nodecnt
@@ -139,6 +181,8 @@ def insert(q_idx, M_param, Mmax_param, efConstruction_param, mL_param):
             nodecnt += 1
             # ite.append(q_idx)
             ite[nodecnt] = q_idx
+            # '''wrong'''
+            # edge.append([])
     for lc in range(L, l, -1):
         W = search_layer(q_idx, current_ep, 1, lc)
         '''返回点 用 [] 存是否有问题？ []'''
@@ -153,6 +197,7 @@ def insert(q_idx, M_param, Mmax_param, efConstruction_param, mL_param):
         W = search_layer(q_idx, current_ep, efConstruction_param, lc)
         if not W:
             # edge.append([])
+            # '''wrong'''
             continue
         neighbors = select_neighbors_heuristic(q_idx, W, M_param, lc)
         # edge.append(neighbors)
@@ -162,16 +207,18 @@ def insert(q_idx, M_param, Mmax_param, efConstruction_param, mL_param):
         new_node_graph_idx = nodecnt
         for e_node_idx in neighbors:
             # edge[e_node_idx].append(new_node_graph_idx)
+            # '''wrong'''
             edge[e_node_idx][edgelen[e_node_idx]] = new_node_graph_idx
             edgelen[e_node_idx] += 1
-            # if len(edge[e_node_idx]) > m_max_lc:
-            '''这个比较不是明文if ，要再处理'''
-            if edgelen[e_node_idx] > m_max_lc:
-                '''没了'''
+            if len(edge[e_node_idx]) > m_max_lc:
+            # '''这个比较不是明文if ，要再处理'''
+            # if edgelen[e_node_idx] > m_max_lc:
+                # '''没了'''
                 e_conn = edge[e_node_idx]
                 e_new_conn = select_neighbors_heuristic(ite[e_node_idx], e_conn, m_max_lc, lc)
                 edge[e_node_idx] = e_new_conn
-                '''这里传的是 [] 还是 oram 要再决定一下。或者说 oram 型的怎么传成 [] ，直接[] '''
+                edgelen[e_node_idx] = len(e_new_conn)
+                # '''这里传的是 [] 还是 oram 要再决定一下。或者说 oram 型的怎么传成 [] ，直接[] '''
         current_ep = nxt(W)
     if l > L:
         L = l
@@ -194,15 +241,16 @@ def init():
         for i in range(1, 4):
             print_ln("节点 %s: %s", i, [node[i][j].reveal() for j in range(D)])
 
-def bruteforce_for_query(q_idx):
+
+b_Q = MaxHeapQ(max_size = K + 2)
+def bruteforce_for_query_heap(q_idx):
     """暴力搜索查询点 q_idx 的 K 个最近邻"""
     start_time = time.time()
-    # Q = MaxHeapQ(max_size = K + 2)
     for i in range(1, N + 1):
         dist = distance_query_to_node(q_idx, i)
-        Q.update(i, dist)
-        Q.pop(Q.size > K)
-    ret = [Q.pop()[1].reveal() for _ in range(K)]
+        b_Q.update(i, dist)
+        b_Q.pop(b_Q.size > K)
+    ret = [b_Q.pop()[1].reveal() for _ in range(K)]
     # ret.sort()
     end_time = time.time()
     duration_ms = (end_time - start_time) * 1000
@@ -214,11 +262,27 @@ def bruteforce_for_query(q_idx):
     print_ln("查询耗时: %s ms", duration_ms)
     return ret
 
+def bruteforce_for_query_sort(q_idx):
+    """暴力搜索查询点 q_idx 的 K 个最近邻，用 sort"""
+    start_time = time.time()
+    sQ = sint.Tensor([N, 2])
+    for i in range(1, N+1):
+        dist = distance_query_to_node(q_idx, i)
+        sQ[i - 1] = (i, dist)
+    sQ.sort(key_indices = [1])
+    sQ = sQ.get_vector_by_indices(None, 0)[:K:]
+    end_time = time.time()
+    duration_ms = (end_time - start_time) * 1000
+    print_ln("\n暴力搜索结果:")
+    print_ln('序号: %s', [_.reveal() for _ in sQ])
+    print_ln("查询耗时: %s ms", duration_ms)
+    return sQ
 '''-------------------主程序-----------------------------'''
 print_ln('-'*50+'RESULT'+'-'*50)
 print_ln()
+# tryheapq()
+# trysort()
 # test()
-
 print_ln("*"*50)
 print_ln("N (数据点数): %s", N)
 print_ln("D (维度): %s", D)
@@ -245,7 +309,7 @@ for i in range(nq):
     val = ((i - (nq - 1) / 2) * ((MAXX - MINX) / (nq - 1)))
     querynode.append([sint(int(val))] * D)
 
-Q = MaxHeapQ(max_size = K + 2)
+
 ave_recall = 0.0
 for q_idx in range(9,11):
     # 现在的 q_idx 就是 querynode 列表的索引 (0, 1, 2...)
@@ -268,8 +332,8 @@ for q_idx in range(9,11):
     # print_ln("查询耗时: %s ms", duration_query_ms)
 
     # 调用查询专用的暴力搜索函数    
-    brt_res = bruteforce_for_query(q_idx)
-    
+    brt_res = bruteforce_for_query_heap(q_idx)
+    bruteforce_for_query_sort(q_idx)
     # brt_set = set(brt_res)
     # ccnt = sum(1 for res_idx in knn_res if res_idx in brt_set)
     # recall = ccnt / K
