@@ -13,7 +13,7 @@ D = 4  # 向量维度
 M = 5  # 每个节点的最大连接数 (除第0层外)
 MMAX0 = 2 * M  # 第0层的最大连接数
 MMAX = M
-N = 100000 # 数据点数量
+N = 10000 # 数据点数量
 EF_CONSTRUCTION = 5  # 构建索引时的搜索范围大小
 K = 3  # K-NN搜索中的K值
 # NlgN = N * (int)(math.log2(N))
@@ -195,7 +195,7 @@ def bruteforce_for_query_sort(q_idx):
     start_time = time.time()
     sQ = sint.Tensor([N, 2])
     # for i in range(1, N+1):
-    @for_range_opt(1,N+1)
+    @for_range_opt(1, N+1)
     def _(i):
         dist = distance_query_to_node(q_idx, i)
         sQ[i - 1] = (i, dist)

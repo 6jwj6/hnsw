@@ -6,16 +6,16 @@ import sys
 import os
 
 # --- 全局常量和变量 ---
-MINX = -1000
-MAXX = 1000
+MINX = -100
+MAXX = 100
 
 D = 4
-M = 10
+M = 6
 MMAX0 = 2 * M
 MMAX = M
 N = 10000
 EF_CONSTRUCTION = 10
-K = 3
+K = 1
 
 # --- 数据容器分离 ---
 node = []      # 存储主数据集, 索引 0-N-1
@@ -77,40 +77,58 @@ def search_layer(q_idx, ep, ef, lc):
     W = [(-distance_node_to_node(q_idx, ite[x]), x) for x in ep]
     heapq.heapify(W)
     rec = 0
+    fl = 0
     while C:
         rec += 1
         dist_c, c_node_idx = heapq.heappop(C)
         if dist_c > -W[0][0]:
+            print(f"break rec = {rec}")
+            '''rec非常小( ≦ 2 ,也就是找到了一次更近的点，第二次就没有更近的点了)的时候，不是break的，
+                rec稍微大一点，就是break的'''
             break
         for e_node_idx in edge[c_node_idx]:
-            # rec += 1  
-            if False or (e_node_idx not in v):
+            if (e_node_idx not in v):
+                # dist_e = distance_node_to_node(q_idx, ite[e_node_idx])
+                # if (dist_e < -W[0][0] and (e_node_idx in v)): fl += 1
                 v.add(e_node_idx)
                 # 调用 node-to-node 距离函数
                 dist_e = distance_node_to_node(q_idx, ite[e_node_idx])
                 if len(W) < ef or dist_e < -W[0][0]:
+                    # rec += 1 
                     heapq.heappush(C, (dist_e, e_node_idx))
                     heapq.heappush(W, (-dist_e, e_node_idx))
                     if len(W) > ef:
                         heapq.heappop(W)
     # return [item[1] for item in sorted(W, key=lambda x: x[0], reverse=True)]
-    print(f"rec = {rec}")
+    print(f"rec = {rec}  fl = {fl}")
     '''可以发现实际while循环次数很小，远不到ef*ef'''
     '''rec位置换一下， 可以发现扩张的次数也不大。'''
     '''和ef、N 正相关，和 M 负相关， 和 K、D 没关系'''
-    global maxloop
-    maxloop = max(maxloop, rec)
+    # global maxloop
+    # maxloop = max(maxloop, rec)
     return [item[1] for item in W]
     
 # --- 修改结束 (2/6) ---
 
 # --- 修改开始 (3/6): 为查询流程创建 search_layer_for_query ---
 def search_layer_for_query(q_idx, ep, ef, lc):
+    '''if lc > 0 : 此时ef = 1, 直接固定次找最近邻居'''
+    '''if lc == 0 : 此时 ef > 1, 固定次数未定'''
     """
     在指定层 (lc) 上搜索最近的 ef 个邻居.
     这是 search_layer 的一个副本，但专用于查询流程。
     q_idx 是 querynode 列表的索引。
     """
+    # if lc > 0 : 
+    #     W = ep[0]
+    #     # for _ in range(10):
+    #     #     continue 
+    #     return [W]
+    '''
+    对于随机均匀的数据，前面几层直接不做，直接最底层用EP去做，区别几乎没有。。。
+    如果前面几层要做，应该是有聚类的数据，且应该select_neighbors_heuristic
+    '''
+    '''基本上只需要考虑最底层怎么去做'''
     v = set(ep)
     # 调用 query-to-node 距离函数
     C = [(distance_query_to_node(q_idx, ite[x]), x) for x in ep]
@@ -118,23 +136,32 @@ def search_layer_for_query(q_idx, ep, ef, lc):
     W = [(-distance_query_to_node(q_idx, ite[x]), x) for x in ep]
     heapq.heapify(W)
     rec = 0
+    rec2 = 0
+    fl = 0
     while C:
         rec += 1
         dist_c, c_node_idx = heapq.heappop(C)
         if dist_c > -W[0][0]:
+            print(f"break rec = {rec}")
+            '''都是 break 掉的'''
             break
         for e_node_idx in edge[c_node_idx]:
             # rec += 1
             if e_node_idx not in v:
+                '''ef = 1 的时候可以去掉这个if语句， ef>1时会重复把小的点放进去，得到重复的答案。'''
+                dist_e = distance_query_to_node(q_idx, ite[e_node_idx])
+                # rec += 1
+                # if (dist_e < -W[0][0] and (e_node_idx in v)): fl += 1
                 v.add(e_node_idx)
                 # 调用 query-to-node 距离函数
-                dist_e = distance_query_to_node(q_idx, ite[e_node_idx])
+                # dist_e = distance_query_to_node(q_idx, ite[e_node_idx])
                 if len(W) < ef or dist_e < -W[0][0]:
+                    rec2 += 1
                     heapq.heappush(C, (dist_e, e_node_idx))
                     heapq.heappush(W, (-dist_e, e_node_idx))
                     if len(W) > ef:
                         heapq.heappop(W)
-    print(f"rec = {rec}")
+    print(f"rec = {rec} rec2 = {rec2} fl = {fl}")
     global maxloop
     maxloop = max(maxloop, rec)
     return [item[1] for item in sorted(W, key=lambda x: x[0], reverse=True)]
@@ -288,6 +315,13 @@ def bruteforce_for_query(q_idx):
     print(f"查询耗时: {duration_ms:.4f} ms", file=sys.stderr)
     return ret
 
+def genquerynode(num, dim=D):
+    print("开始生成查询数据...", file=sys.stderr)
+    global querynode
+    for i in range(num):
+        querynode.append([random.randint(MINX, MAXX) for _ in range(dim)])
+    print("完成写入查询数据", file=sys.stderr)
+
 def main():
     """主执行函数"""
     gendata()
@@ -312,14 +346,13 @@ def main():
     print("\nHNSW 图构建完成", file=sys.stderr)
 
     # --- 修改开始 (5/6): 将查询点存入新的 querynode 列表 ---
-    nq = 21
-    print(f"输入查询次数: {nq}", file=sys.stderr)
-
+    nq = 1000
+    genquerynode(nq)
     global querynode
-    querynode = [] # 确保查询列表是空的
-    for i in range(nq):
-        val = (i - (nq - 1) / 2) * ((MAXX - MINX) / (nq - 1))
-        querynode.append([int(val)] * D)
+    # querynode = [] # 确保查询列表是空的
+    # for i in range(nq):
+    #     val = (i - (nq - 1) / 2) * ((MAXX - MINX) / (nq - 1))
+    #     querynode.append([int(val)] * D)
         
     print(f"\n主数据集大小 (node size): {len(node) - 1}", file=sys.stderr)
     print(f"查询集大小 (querynode size): {len(querynode)}", file=sys.stderr)
@@ -328,7 +361,7 @@ def main():
     # --- 修改开始 (6/6): 修改查询循环和函数调用 ---
     for q_idx in range(nq):
         # 现在的 q_idx 就是 querynode 列表的索引 (0, 1, 2...)
-        print("\n--------------------------------", file=sys.stderr)
+        print("\n------------------------------------------------", file=sys.stderr)
         q_vec = querynode[q_idx]
         q_vec_str = ", ".join(map(str, q_vec))
         print(f"当前查询点 (索引 {q_idx}) 为 ({q_vec_str})", file=sys.stderr)
@@ -355,7 +388,7 @@ def main():
         recall = ccnt / K
         ave_recall += recall
         print(f"召回率: {recall:.4f}", file=sys.stderr)
-        print("-------------------------------------\n", file=sys.stderr)
+        print("------------------------------------------------\n", file=sys.stderr)
     # --- 修改结束 (6/6) ---
         
     print(f"平均召回率: {ave_recall / nq:.4f}", file=sys.stderr)
