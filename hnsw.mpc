@@ -57,7 +57,52 @@ def nxt(W):
 #     return 
 
 def search_layer_for_query(q_idx, ep, ef, lc):
-    return
+    v = OptimalORAM(N)
+    # 调用 query-to-node 距离函数
+    # C = [(distance_query_to_node(q_idx, ite[x]), x) for x in ep]
+    # heapq.heapify(C)
+    # W = [(-distance_query_to_node(q_idx, ite[x]), x) for x in ep]
+    # heapq.heapify(W)
+    MD = 10000000
+    MC = ef*ef
+    MW = ef*ef
+    C = sint.Tensor([MC+1, 2])
+    C.assign_all(MD)
+    C[0] = (distance_query_to_node(q_idx, ite[ep[0]]), ep[0])
+    W = sint.Tensor([MW+1, 2])
+    W.assign_all(MD)
+    W[0] = (-distance_query_to_node(q_idx, ite[ep[0]]), ep[0])
+    lenW = sint(1)
+    running = MemValue(sint(1))
+    maxloop = 100
+    # while C:
+    @for_range(maxloop)
+    def _(_):
+        dist_c, c_node_idx = C[0]
+        C[0] = (MD, 0)
+        # if dist_c > -W[0][0]:
+        # running.write(running.bit_and( dist_c <= -W[0][0]))
+            # print(f"break rec = {rec}")
+            # '''都是 break 掉的'''
+            # break
+        for index, e_node_idx in enumerate(edge[c_node_idx]):
+            insert_flag = (v[e_node_idx] != q_idx)
+            # if e_node_idx not in v:
+            dist_e = distance_query_to_node(q_idx, ite[e_node_idx])
+                # v.add(e_node_idx)
+            v[e_node_idx] = q_idx 
+                # if len(W) < ef or dist_e < -W[0][0]:
+            tp = insert_flag.if_else((dist_e,e_node_idx), (MD,0))
+                    # heapq.heappush(C, (dist_e, e_node_idx))
+                    # heapq.heappush(W, (-dist_e, e_node_idx))
+                    # if len(W) > ef:
+                    #     heapq.heappop(W)
+            C[MC-index] = tp
+            W[MW-index] = tp
+        C.sort()
+        W.sort()
+    # return [item[1] for item in sorted(W, key=lambda x: x[0], reverse=True)]
+    return W.get_vector_by_indices(None,1)[:ef:]
 
 def select_neighbors_simple(q_idx, C, M_conn, lc):
     R = []
