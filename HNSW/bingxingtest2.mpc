@@ -1,0 +1,59 @@
+import multiprocessing
+import time
+
+# 定义每个工作进程要执行的函数
+# 这个函数计算一个指定范围 (start, end) 内所有整数的和
+def sum_chunk(start, end):
+    """计算一个数据块的和"""
+    total = 0
+    for i in range(start, end + 1):
+        total += i
+    return total
+
+if __name__ == "__main__":
+    # ======== 准备工作 ========
+    N = 1000000
+    # 获取 CPU 的核心数，以便决定创建多少个进程
+    num_processes = multiprocessing.cpu_count()
+    print(f"将使用 {num_processes} 个进程进行并行计算...")
+
+    # 计算每个进程需要处理的数据块大小
+    chunk_size = N // num_processes
+    
+    # 创建任务列表，每个任务是一个 (start, end) 元组
+    tasks = []
+    start = 1
+    for i in range(num_processes):
+        end = start + chunk_size - 1
+        if i == num_processes - 1: # 确保最后一个进程处理到 N
+            end = N
+        tasks.append((start, end))
+        start = end + 1
+
+    print("分配的任务块:", tasks)
+
+    # ======== 并行计算 ========
+    start_time = time.time()
+
+    # 创建一个进程池 (Pool)
+    # Pool 会自动管理进程的创建、任务分配和关闭
+    with multiprocessing.Pool(processes=num_processes) as pool:
+        # 使用 starmap 将 tasks 列表中的每个元组作为参数传递给 sum_chunk 函数
+        # 它会阻塞直到所有任务完成
+        results = pool.starmap(sum_chunk, tasks)
+
+    # 合并所有进程返回的部分和
+    final_sum = sum(results)
+    
+    end_time = time.time()
+
+    print(f"\n并行计算结果: {final_sum}")
+    print(f"并行计算耗时: {end_time - start_time:.6f} 秒")
+
+    # ======== 作为对比的单线程计算 ========
+    start_time_single = time.time()
+    single_thread_sum = sum(range(1, N + 1))
+    end_time_single = time.time()
+    
+    print(f"\n单线程计算结果: {single_thread_sum}")
+    print(f"单线程计算耗时: {end_time_single - start_time_single:.6f} 秒")

@@ -1,0 +1,48 @@
+import concurrent.futures
+import time
+import os
+
+# 1. 修改工作函数，使其接收一个参数（包含起始和结束值的元组）
+def sum_chunk(start_end_tuple):
+    """计算一个数据块的和"""
+    start, end = start_end_tuple  # 在函数内部解包元组
+    print(f"进程 {os.getpid()} 开始计算 {start} 到 {end}...")
+    # 为了演示效果，我们可以用内置的 sum 函数，它对 range 效率很高
+    total = sum(range(start, end + 1))
+    return total
+
+if __name__ == "__main__":
+    N = 1000000
+    # 获取 CPU 核心数，或者手动指定
+    num_processes = os.cpu_count() or 4
+    chunk_size = N // num_processes
+    
+    # 创建任务列表，每个任务是一个 (start, end) 元组
+    # 这部分和之前一样
+    tasks = []
+    start = 1
+    for i in range(num_processes):
+        end = start + chunk_size - 1
+        if i == num_processes - 1:
+            end = N
+        tasks.append((start, end))
+        start = end + 1
+        
+    print(f"将使用 {num_processes} 个进程...")
+    print("分配的任务块:", tasks)
+
+    start_time = time.time()
+
+    with concurrent.futures.ProcessPoolExecutor(max_workers=num_processes) as executor:
+        # 2. 使用 map 方法，它非常简洁
+        # 它会自动将 tasks 列表中的每个元组 (start, end) 作为单个参数传递给 sum_chunk 函数
+        # map 方法返回一个迭代器，按任务提交的顺序产生结果
+        results_iterator = executor.map(sum_chunk, tasks)
+
+        # 3. 直接对结果迭代器求和，代码非常优雅
+        final_sum = sum(results_iterator)
+
+    end_time = time.time()
+
+    print(f"\n并行计算结果: {final_sum}")
+    print(f"并行计算耗时: {end_time - start_time:.6f} 秒")
