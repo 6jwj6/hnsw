@@ -20,11 +20,11 @@ const int minx = -1000;
 const int maxx = 1000;
 
 const int d = 4;
-const int M = 16;
+const int M = 5;
 const int Mmax0 = 2 * M;
 const int Mmax = M;
-const int n = 1e4;
-const int efConstruction = 10;
+const int n = 10;
+const int efConstruction = 5;
 const int K = 3;
 
 std::random_device rd;

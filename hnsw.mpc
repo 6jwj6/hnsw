@@ -12,14 +12,16 @@ D = 4  # 向量维度
 M = 5  # 每个节点的最大连接数 (除第0层外)
 MMAX0 = 2 * M  # 第0层的最大连接数
 MMAX = M
-N = 10  # 数据点数量
+N = 100  # 数据点数量
 EF_CONSTRUCTION = 5  # 构建索引时的搜索范围大小
 K = 3  # K-NN搜索中的K值
 NlgN = N * (int)(math.log2(N))
 # 数据和图结构
-node =  OptimalORAM(size = N + 1, value_length = D)
-edge = OptimalORAM(size = N + 1, value_length = MMAX0 + 5)  # 邻接表, edge[0] 作为占位符
-edgelen = OptimalORAM(size = N + 1)
+# node =  OptimalORAM(size = N + 1, value_length = D)
+node = [[] for _ in range(N+2)]
+# edge = OptimalORAM(size = N + 1, value_length = MMAX0 + 5)  # 邻接表, edge[0] 作为占位符
+# edgelen = OptimalORAM(size = N + 1)
+edge = [[]]
 ite = OptimalORAM(size = NlgN)   # 索引到节点ID的映射, ite[0] 作为占位符
 
 # HNSW 算法状态
@@ -128,7 +130,9 @@ def select_neighbors_heuristic(q_idx, C, M_conn, lc, extend_candidates=False, ke
 def insert(q_idx, M_param, Mmax_param, efConstruction_param, mL_param):
     global L, EP, nodecnt
     current_ep = [EP] if nodecnt != 0 else []
+    '''候选点的序号, 用 [] 存是否有问题？ []'''
     l = math.floor(-math.log(random.uniform(0.0, 1.0)) * mL_param)
+    '''l 和 L 的比较，是否明文？ 直接明文'''
     if l > L:
         EP = nodecnt + 1
         for _ in range(l, L, -1):
@@ -137,6 +141,7 @@ def insert(q_idx, M_param, Mmax_param, efConstruction_param, mL_param):
             ite[nodecnt] = q_idx
     for lc in range(L, l, -1):
         W = search_layer(q_idx, current_ep, 1, lc)
+        '''返回点 用 [] 存是否有问题？ []'''
         if not W: break
         assert len(W) == 1
         current_ep = nxt(W)
@@ -151,7 +156,7 @@ def insert(q_idx, M_param, Mmax_param, efConstruction_param, mL_param):
             continue
         neighbors = select_neighbors_heuristic(q_idx, W, M_param, lc)
         # edge.append(neighbors)
-        '''这里不知道个数，需要再处理'''
+        '''这里不知道个数，需要再处理。目前的处理是用 edgelen 来记录长度。append 就是在 edgelen 位置赋值'''
         edge[nodecnt] = neighbors
         edgelen[nodecnt] = len(neighbors)
         new_node_graph_idx = nodecnt
@@ -160,11 +165,13 @@ def insert(q_idx, M_param, Mmax_param, efConstruction_param, mL_param):
             edge[e_node_idx][edgelen[e_node_idx]] = new_node_graph_idx
             edgelen[e_node_idx] += 1
             # if len(edge[e_node_idx]) > m_max_lc:
+            '''这个比较不是明文if ，要再处理'''
             if edgelen[e_node_idx] > m_max_lc:
+                '''没了'''
                 e_conn = edge[e_node_idx]
                 e_new_conn = select_neighbors_heuristic(ite[e_node_idx], e_conn, m_max_lc, lc)
                 edge[e_node_idx] = e_new_conn
-                '''这里传的是向量还是oram要再决定一下'''
+                '''这里传的是 [] 还是 oram 要再决定一下。或者说 oram 型的怎么传成 [] ，直接[] '''
         current_ep = nxt(W)
     if l > L:
         L = l
