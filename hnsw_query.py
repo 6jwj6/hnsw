@@ -247,7 +247,7 @@ def init():
             print(f"节点 {i}: {node[i]}", file=sys.stderr)
 
 # bruteforce 函数现在也专用于查询
-def bruteforce_for_query(q_idx):
+def bruteforce_for_query(q_idx, print_flag = True):
     """暴力搜索查询点 q_idx 的 K 个最近邻"""
     start_time = time.time()
     W = []
@@ -260,16 +260,17 @@ def bruteforce_for_query(q_idx):
     ret = sorted([item[1] for item in W], reverse=True)
     end_time = time.time()
     duration_ms = (end_time - start_time) * 1000
-    print("\n暴力搜索结果:", file=sys.stderr)
-    print("序号：", ' '.join(map(str, ret)), file=sys.stderr)
-    for r_idx in ret:
-        dist = distance_query_to_node(q_idx, r_idx)
-        print(f"{node[r_idx]} || {dist:.4f}", file=sys.stderr)
-    print(f"查询耗时: {duration_ms:.4f} ms", file=sys.stderr)
+    if print_flag:
+        print("\n暴力搜索结果:", file=sys.stderr)
+        print("序号：", ' '.join(map(str, ret)), file=sys.stderr)
+        for r_idx in ret:
+            dist = distance_query_to_node(q_idx, r_idx)
+            print(f"{node[r_idx]} || {dist:.4f}", file=sys.stderr)
+        print(f"查询耗时: {duration_ms:.4f} ms", file=sys.stderr)
     return ret
 
 def genquerynode(num, dim=D):
-    print("开始生成查询数据...", file=sys.stderr)
+    print("\n开始生成查询数据...", file=sys.stderr)
     global querynode
     for i in range(num):
         querynode.append([random.randint(MINX, MAXX) for _ in range(dim)])
@@ -302,7 +303,69 @@ def printgraph():
         line = ' '.join(str(_) for _ in ite)
         f.write(line+'\n')
         print("完成写入ite", file = sys.stderr)
+def query(printflag = True):
+    nq = 1000
+    genquerynode(nq)
+    global querynode
         
+    print(f"\n主数据集大小 (node size): {len(node) - 1}", file=sys.stderr)
+    print(f"查询集大小 (querynode size): {len(querynode)}", file=sys.stderr)
+
+    if printflag:
+        ave_recall = 0.0
+        # --- 修改开始 (6/6): 修改查询循环和函数调用 ---
+        for i in range(nq):
+            # 现在的 q_idx 就是 querynode 列表的索引 (0, 1, 2...)
+            q_idx = i
+            
+            print("\n--------------------------------", file=sys.stderr)
+            q_vec = querynode[q_idx]
+            q_vec_str = ", ".join(map(str, q_vec))
+            print(f"当前查询点 (索引 {q_idx}) 为 ({q_vec_str})", file=sys.stderr)
+            
+            print("\nq 的 K-ANN 搜索结果:", file=sys.stderr)
+            start_query = time.time()
+            # 调用查询专用函数 k_nn_search，并传递查询索引
+            knn_res = k_nn_search(q_idx, K, EF_CONSTRUCTION)
+            end_query = time.time()
+            duration_query_ms = (end_query - start_query) * 1000
+
+            print("序号: ",' '.join(map(str, knn_res)), file=sys.stderr)
+            for res_idx in knn_res:
+                dist = distance_query_to_node(q_idx, res_idx)
+                print(f"{node[res_idx]} || {dist:.4f}", file=sys.stderr)
+            print(f"查询耗时: {duration_query_ms:.4f} ms", file=sys.stderr)
+
+            # 调用查询专用的暴力搜索函数
+            brt_res = bruteforce_for_query(q_idx)
+            
+            brt_set = set(brt_res)
+            ccnt = sum(1 for res_idx in knn_res if res_idx in brt_set)
+            recall = ccnt / K
+            ave_recall += recall
+            print(f"召回率: {recall:.4f}", file=sys.stderr)
+            print("-------------------------------------\n", file=sys.stderr)
+    else:
+        ave_recall = 0.0
+        for i in range(nq):
+            # 现在的 q_idx 就是 querynode 列表的索引 (0, 1, 2...)
+            q_idx = i
+   
+            # 调用查询专用函数 k_nn_search，并传递查询索引
+            knn_res = k_nn_search(q_idx, K, EF_CONSTRUCTION)
+            # 调用查询专用的暴力搜索函数
+            brt_res = bruteforce_for_query(q_idx, False)
+            
+            brt_set = set(brt_res)
+            ccnt = sum(1 for res_idx in knn_res if res_idx in brt_set)
+            recall = ccnt / K
+            ave_recall += recall
+
+    # --- 修改结束 (6/6) ---
+        
+    print(f"\n平均召回率: {ave_recall / nq:.4f}", file=sys.stderr)
+    
+
 def main():
     """主执行函数"""
     # gendata()
@@ -325,53 +388,12 @@ def main():
     end_insert = time.time()
     duration_insert = end_insert - start_insert
     print("\nHNSW 图构建完成", file=sys.stderr)
-
+    print(f"建图耗时: {duration_insert:.4f} seconds", file=sys.stderr)
+    
     printgraph()
     # --- 修改开始 (5/6): 将查询点存入新的 querynode 列表 ---
-    nq = 1000
-    genquerynode(nq)
-    global querynode
-        
-    print(f"\n主数据集大小 (node size): {len(node) - 1}", file=sys.stderr)
-    print(f"查询集大小 (querynode size): {len(querynode)}", file=sys.stderr)
-
-    ave_recall = 0.0
-    # --- 修改开始 (6/6): 修改查询循环和函数调用 ---
-    for i in range(nq):
-        # 现在的 q_idx 就是 querynode 列表的索引 (0, 1, 2...)
-        q_idx = i
-        
-        print("\n--------------------------------", file=sys.stderr)
-        q_vec = querynode[q_idx]
-        q_vec_str = ", ".join(map(str, q_vec))
-        print(f"当前查询点 (索引 {q_idx}) 为 ({q_vec_str})", file=sys.stderr)
-        
-        print("\nq 的 K-ANN 搜索结果:", file=sys.stderr)
-        start_query = time.time()
-        # 调用查询专用函数 k_nn_search，并传递查询索引
-        knn_res = k_nn_search(q_idx, K, EF_CONSTRUCTION)
-        end_query = time.time()
-        duration_query_ms = (end_query - start_query) * 1000
-
-        print("序号: ",' '.join(map(str, knn_res)), file=sys.stderr)
-        for res_idx in knn_res:
-            dist = distance_query_to_node(q_idx, res_idx)
-            print(f"{node[res_idx]} || {dist:.4f}", file=sys.stderr)
-        print(f"查询耗时: {duration_query_ms:.4f} ms", file=sys.stderr)
-
-        # 调用查询专用的暴力搜索函数
-        brt_res = bruteforce_for_query(q_idx)
-        
-        brt_set = set(brt_res)
-        ccnt = sum(1 for res_idx in knn_res if res_idx in brt_set)
-        recall = ccnt / K
-        ave_recall += recall
-        print(f"召回率: {recall:.4f}", file=sys.stderr)
-        print("-------------------------------------\n", file=sys.stderr)
-    # --- 修改结束 (6/6) ---
-        
-    print(f"平均召回率: {ave_recall / nq:.4f}", file=sys.stderr)
-    print(f"插入耗时: {duration_insert:.4f} seconds", file=sys.stderr)
+    query(False)
+    
 
 if __name__ == "__main__":
     main()
