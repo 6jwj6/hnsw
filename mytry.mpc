@@ -1,0 +1,41 @@
+from Compiler.library import *
+# from Compiler.compilerLib import Compiler
+from Compiler.types import *
+from Compiler.oram import OptimalORAM # Or the ORAM type your copied HeapQ uses
+# from Compiler.program import Program # May be needed by HeapQ's internal methods like check() or dump()
+from Compiler.dijkstra import HeapEntry,HeapORAM,HeapQ
+
+N_VALUE_BITS = 6
+HEAP_MAX_SIZE_AND_VALUE_RANGE = 2**N_VALUE_BITS 
+
+NEG_INF_PRIO = sint(-(2**(N_VALUE_BITS - 1)))
+
+# --- Initialize HeapQ ---
+# Both prio_bits and value_bits will be N_VALUE_BITS.
+print_ln("Initializing HeapQ with max_size/value_range = %s (%s bits for x)...", HEAP_MAX_SIZE_AND_VALUE_RANGE, N_VALUE_BITS)
+
+# This instantiation assumes your copied HeapQ class is now defined in this file.
+# Note: The ORAMs inside HeapQ will be large if HEAP_MAX_SIZE_AND_VALUE_RANGE is large.
+# e.g., value_index ORAM will have HEAP_MAX_SIZE_AND_VALUE_RANGE addressable entries.
+Q = HeapQ(max_size=HEAP_MAX_SIZE_AND_VALUE_RANGE, # Defines value range [0, max_size-1] and heap capacity
+          oram_type=OptimalORAM,
+          int_type=sint,
+          entry_size=(N_VALUE_BITS, N_VALUE_BITS) # (priority_bits, value_bits) for HeapEntry
+)
+print_ln('-'*50+'RESULT'+'-'*50)   
+
+for_real = sint(1)
+
+for _ in range(10):
+    op = sint.get_input_from(0)
+    x = sint.get_input_from(0)
+    print_ln('%s inserted...',x.reveal())
+    Q.update(x, x, for_real)
+
+for _ in range(5):
+    op = sint.get_input_from(0)
+    entry = Q.pop(for_real)
+    print_ln('top is %s',entry.reveal())
+print_ln('-'*106)
+
+
