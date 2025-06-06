@@ -1,0 +1,9 @@
+X = sfix.input_tensor_via(0, [[1, 2, 3], # 2 samples
+                              [11, 12, 13]])
+y = sint.input_tensor_via(0, [0, 1]) # 2 labels
+
+from Compiler import ml
+log = ml.SGDLogistic(100)
+log.fit(X, y)
+
+print_ln('%s', log.predict(X).reveal())

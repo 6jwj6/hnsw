@@ -1,0 +1,20 @@
+import random
+
+# Generate n random numbers
+n = 100000#int(input("输入要生成的随机数的个数： "))
+random_numbers = [random.randint(-1000, 1000) for _ in range(n)]  # Generates integers between 0 and 1000
+
+# Define the filename
+filename0 = "./Player-Data/Input-P0-0"
+filename1 = "./Player-Data/Input-P1-1"
+filename2 = "./Player-Data/Input-P2-2"
+
+# Write the random numbers to the file
+try:
+    with open(filename0, 'w') as f:
+        for number in random_numbers:
+            f.write(str(number) + "\n")
+    print(f"Successfully generated 100 random numbers and saved them to '{filename0}'")
+except IOError:
+    print(f"Error: Could not write to file '{filename0}'")
+
