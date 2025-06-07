@@ -36,6 +36,8 @@ for _ in range(5):
     op = sint.get_input_from(0)
     entry = Q.pop(for_real)
     print_ln('top is %s',entry.reveal())
+    ty = op.basic_type # == sint
+    print_ln('%s',ty(3).reveal())
 print_ln('-'*106)
 
 
