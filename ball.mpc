@@ -13,7 +13,7 @@ from Compiler.types import *
 # if __name__ == "__main__":
 #     compiler.compile_func()
 print_ln('-'*50+'RESULT'+'-'*50)
-a = sint.Array(1000)
+a = sint.Array(100000)
 a.input_from(0)
 
 a.sort()
