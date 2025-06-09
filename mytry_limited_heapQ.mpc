@@ -15,24 +15,60 @@ Q = HeapQ(max_size=HEAP_MAX_SIZE_AND_VALUE_RANGE, # Defines value range [0, max_
           int_type=sint,
           entry_size=(N_VALUE_BITS, N_VALUE_BITS) # (priority_bits, value_bits) for HeapEntry
 )
-print_ln('-'*50+'RESULT'+'-'*50)   
+print_ln('-'*50+'RESULT'+'-'*50)
 
+# 在你的循环之前，先清空或重新初始化 Q
+# ...
 
+# 第一次插入 (value=100, 映射到地址 36)
+Q.update(sint(100), sint(200), sint(1))
+# Q.update(100, sint(200), sint(1))      work same
+print_ln("Inserted value 100 with prio 200")
+
+# 第二次插入 (value=36, 也映射到地址 36，会覆盖上面的索引信息)
+Q.update(sint(36), sint(50), sint(1))
+# Q.update(36, sint(50), sint(1))
+print_ln("Inserted value 36 with prio 50")
+print_ln('%s',Q.size.reveal())
+# 现在堆里应该有 prio=200 和 prio=50 的两个元素
+# 最小值应该是 50
+entry = Q.pop(sint(1))
+print_ln("Popped value is %s, prio is %s", entry[1].reveal(), entry[0].reveal())
+# 应该会弹出 36, 50
+
+# 现在再弹一次，应该弹出 100, 200
+entry = Q.pop(sint(1))
+print_ln("Popped value is %s, prio is %s", entry[1].reveal(), entry[0].reveal())
+
+# 现在尝试删除 100
+# 这个操作很可能会失败，或者产生意想不到的结果，因为它在 value_index 中的记录已经被 36 的插入给覆盖了！
+Q.update(100, NEG_INF_PRIO, sint(1))
+entry = Q.pop(sint(1))
+print_ln("Tried to delete 100, but popped: %s", entry[0].reveal())
+# ------------------------------------------------------------------------------------------
 for i in range(20):
     op = sint.get_input_from(0)
     x = sint.get_input_from(0)
-    Q.update(i, x, op==1)
+    x = x + 100
+    Q.update(i+100, x, op==1)
     entry_pop = Q.pop(op==0)
     entry_top = Q.top(op==2)
-
+    
     @if_((op==1).reveal())
     def _():
         print_ln('%s insert...', x.reveal())
+
     @if_((op==0).reveal())
     def _():
         print_ln('%s poped...', entry_pop[0].reveal())
+
     @if_((op==2).reveal())
     def _():
         print_ln('%s is the top...', entry_top[0].reveal())
 
+    over_size = Q.size > 3
+    @if_(over_size.reveal())
+    def _():
+        ee = Q.pop(over_size)
+        print_ln('size > 3, %s poped...', ee[0].reveal())
     #print_ln('(大小，序号) = (%s,%s)', Q.top()[0].reveal(),Q.top()[1].reveal())
