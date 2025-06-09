@@ -97,6 +97,17 @@ class HeapQ(object):
         prog.reading('heap queue', 'KS14')
         print('heap: %d levels, depth %d, size %d, index size %d' % \
             (self.levels, self.depth, self.heap.oram.size, self.value_index.size))
+    
+    def pop(self, for_real=True):
+        '''
+        pop and 输出 top 的 (prio, value)
+        '''
+        return self._pop(self.basic_type.hard_conv(for_real))
+    def top(self, for_real=True):
+        '''
+        输出 top 的 (prio, value)
+        '''
+        return self._top(self.basic_type.hard_conv(for_real))
     def update(self, value, prio, for_real=True):
         '''
         更新 value 对应的 prio 值\n
@@ -105,16 +116,6 @@ class HeapQ(object):
         self._update(self.basic_type.hard_conv(value), \
                          self.basic_type.hard_conv(prio), \
                          self.basic_type.hard_conv(for_real))
-    def top(self, for_real=True):
-        '''
-        输出 top 的 (prio, value)
-        '''
-        return self._top(self.basic_type.hard_conv(for_real))
-    def pop(self, for_real=True):
-        '''
-        pop and 输出 top 的 (prio, value)
-        '''
-        return self._pop(self.basic_type.hard_conv(for_real))
     def bubble_up(self, start):
         bits = bit_decompose(start, self.levels)
         bits.reverse()

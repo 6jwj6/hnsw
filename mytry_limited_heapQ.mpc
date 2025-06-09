@@ -19,14 +19,20 @@ print_ln('-'*50+'RESULT'+'-'*50)
 
 
 for i in range(20):
-    ins = sint.get_input_from(0)
+    op = sint.get_input_from(0)
     x = sint.get_input_from(0)
-    Q.update(i, x, ins)
-    entry = Q.pop(sint(1)-ins)
+    Q.update(i, x, op==1)
+    entry_pop = Q.pop(op==0)
+    entry_top = Q.top(op==2)
 
-    @if_e(ins.reveal())
+    @if_((op==1).reveal())
     def _():
         print_ln('%s insert...', x.reveal())
-    @else_
+    @if_((op==0).reveal())
     def _():
-        print_ln('%s poped...', entry[0].reveal())
+        print_ln('%s poped...', entry_pop[0].reveal())
+    @if_((op==2).reveal())
+    def _():
+        print_ln('%s is the top...', entry_top[0].reveal())
+
+    #print_ln('(大小，序号) = (%s,%s)', Q.top()[0].reveal(),Q.top()[1].reveal())
