@@ -13,7 +13,7 @@ M = 16  # 每个节点的最大连接数 (除第0层外)
 MMAX0 = 2 * M  # 第0层的最大连接数
 MMAX = M
 N = 10000  # 数据点数量
-EF_CONSTRUCTION = 20  # 构建索引时的搜索范围大小
+EF_CONSTRUCTION = 10  # 构建索引时的搜索范围大小
 K = 3  # K-NN搜索中的K值
 
 # 数据和图结构
@@ -273,7 +273,7 @@ def bruteforce(q_idx):
 
 def main():
     """主执行函数"""
-    gendata()
+    # gendata()
     init()
     
     print("\n*********************", file=sys.stderr)
@@ -289,7 +289,7 @@ def main():
     for i in range(1, N + 1):
         insert(i, M, MMAX, EF_CONSTRUCTION, ML)
         if i % (N // 100) == 0:
-            print(f"已插入节点数 = {i}", file=sys.stderr)
+            print(f"已插入节点数 = {i} / {N}", file=sys.stderr)
             
     end_insert = time.time()
     duration_insert = end_insert - start_insert

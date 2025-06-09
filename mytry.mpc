@@ -1,8 +1,6 @@
 from Compiler.library import *
-# from Compiler.compilerLib import Compiler
 from Compiler.types import *
 from Compiler.oram import OptimalORAM # Or the ORAM type your copied HeapQ uses
-# from Compiler.program import Program # May be needed by HeapQ's internal methods like check() or dump()
 from Compiler.dijkstra import HeapEntry,HeapORAM,HeapQ
 
 N_VALUE_BITS = 6
@@ -10,13 +8,8 @@ HEAP_MAX_SIZE_AND_VALUE_RANGE = 2**N_VALUE_BITS
 
 NEG_INF_PRIO = sint(-(2**(N_VALUE_BITS - 1)))
 
-# --- Initialize HeapQ ---
-# Both prio_bits and value_bits will be N_VALUE_BITS.
 print_ln("Initializing HeapQ with max_size/value_range = %s (%s bits for x)...", HEAP_MAX_SIZE_AND_VALUE_RANGE, N_VALUE_BITS)
 
-# This instantiation assumes your copied HeapQ class is now defined in this file.
-# Note: The ORAMs inside HeapQ will be large if HEAP_MAX_SIZE_AND_VALUE_RANGE is large.
-# e.g., value_index ORAM will have HEAP_MAX_SIZE_AND_VALUE_RANGE addressable entries.
 Q = HeapQ(max_size=HEAP_MAX_SIZE_AND_VALUE_RANGE, # Defines value range [0, max_size-1] and heap capacity
           oram_type=OptimalORAM,
           int_type=sint,
@@ -40,4 +33,47 @@ for _ in range(5):
     print_ln('%s',ty(3).reveal())
 print_ln('-'*106)
 
+
+# 1. 导入必要的模块
+
+# 2. 定义向量的规格
+n = 128  # 向量长度
+element_bits = 64 # 每个元素的比特宽度
+oram_type_to_use = OptimalORAM # 选择ORAM的“型号”
+
+# 3. 使用构造函数创建ORAM实例
+#    这就是你的ORAM向量
+print_ln("Creating ORAM vector of size %s...", n)
+my_oram_vector = oram_type_to_use(
+    size=n,
+    entry_size=(element_bits,), # 注意是元组 (64,)
+    init_rounds=-1,             # 使用默认初始化
+    value_type=sint.basic_type  # 基础类型为sint
+)
+print_ln("ORAM vector created.")
+
+# 4. 使用你的ORAM向量
+#    所有访问都将通过ORAM协议，是访问模式保密的。
+
+# 写入操作 (假设 party 0 提供一个秘密值)
+secret_val = sint.get_input_from(0)
+# 将这个秘密值写入到索引为 10 的位置
+# 注意：写入时也需要提供一个元组，匹配 entry_size 的结构
+my_oram_vector[sint(10)] = (secret_val,)
+
+# 读取操作
+# 读取索引为 10 的位置的值
+# ORAM的读取操作会返回一个元组和一个'empty'标志位
+read_data_tuple, empty_flag = my_oram_vector.read(sint(11))
+@if_e(empty_flag.reveal())
+def _():
+    print_ln("EMPTY!!!")
+@else_
+def _():
+    # 从返回的元组中提取我们的值
+    read_val = read_data_tuple[0]
+    print_ln("Value read from ORAM vector at index 10 is: %s\nempty_flag is %s", 
+            read_val.reveal(), empty_flag.reveal())
+    
+print_ln('-'*106)
 
