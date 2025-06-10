@@ -1,15 +1,15 @@
 from Compiler.library import *
 from Compiler.types import *
 from Compiler.oram import *
-from Compiler.program import Program
+# from Compiler.program import Program
 
 ORAM = OptimalORAM
 
-try:
-    prog = program.Program.prog
-    prog.set_bit_length(min(64, prog.bit_length))
-except AttributeError:
-    pass
+# try:
+#     prog = program.Program.prog
+#     prog.set_bit_length(min(64, prog.bit_length))
+# except AttributeError:
+#     pass
 
 class HeapEntry(object):
     fields = ['empty', 'prio', 'value']
@@ -94,7 +94,7 @@ class HeapQ(object):
         self.size = MemValue(int_type(0))
         self.int_type = int_type
         self.basic_type = basic_type
-        prog.reading('heap queue', 'KS14')
+        # prog.reading('heap queue', 'KS14')
         print('heap: %d levels, depth %d, size %d, index size %d' % \
             (self.levels, self.depth, self.heap.oram.size, self.value_index.size))
     
@@ -140,14 +140,14 @@ class HeapQ(object):
         '''
         输出 top\n 格式 (prio, value)
         '''
-        Program.prog.curr_tape.\
-            start_new_basicblock(name='heapq-top')
+        # Program.prog.curr_tape.\
+        #     start_new_basicblock(name='heapq-top')
         entry = self.heap[1]
         return (entry.prio, entry.value)
     @method_block
     def _pop(self, for_real=True):
-        Program.prog.curr_tape.\
-            start_new_basicblock(name='heapq-pop')
+        # Program.prog.curr_tape.\
+        #     start_new_basicblock(name='heapq-pop')
         pop_for_real = for_real * (self.size != 0)
         entry = self.heap[1]
         self.value_index.delete(entry.value, for_real)
@@ -180,8 +180,8 @@ class HeapQ(object):
         return (entry.prio, entry.value)
     @method_block
     def _update(self, value, prio, for_real=True):
-        Program.prog.curr_tape.\
-            start_new_basicblock(name='heapq-update')
+        # Program.prog.curr_tape.\
+        #     start_new_basicblock(name='heapq-update')
         index, not_found = self.value_index.read(value)
         self.size += self.int_type(not_found * for_real)
         index = if_else(not_found, self.basic_type(self.size), index[0])

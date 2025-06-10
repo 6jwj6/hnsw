@@ -1,8 +1,8 @@
 from Compiler.library import *
 from Compiler.types import *
 from Compiler.oram import *
-from Compiler.program import Program
-from Programs.Source.HeapQ import *
+from Compiler.program import *
+from Programs.Source.HeapQ import HeapQ
 N_VALUE_BITS = 6
 HEAP_MAX_SIZE_AND_VALUE_RANGE = 2**N_VALUE_BITS 
 
@@ -46,7 +46,7 @@ Q.update(100, NEG_INF_PRIO, sint(1))
 entry = Q.pop(sint(1))
 print_ln("Tried to delete 100, but popped: %s", entry[0].reveal())
 # ------------------------------------------------------------------------------------------
-for i in range(20):
+for i in range(10):
     op = sint.get_input_from(0)
     x = sint.get_input_from(0)
     x = x + 100
