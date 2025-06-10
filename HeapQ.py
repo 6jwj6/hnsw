@@ -86,6 +86,7 @@ class HeapQ(object):
         basic_type = int_type.basic_type
         self.max_size = max_size
         self.levels = log2(max_size)
+        print_ln('levels = %s',self.levels)
         self.depth = self.levels - 1
         self.heap = HeapORAM(2**self.levels, oram_type, init_rounds, int_type, entry_size=entry_size)
         self.value_index = oram_type(max_size, entry_size=entry_size[1], \
