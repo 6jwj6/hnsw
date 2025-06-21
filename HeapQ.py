@@ -79,7 +79,7 @@ class MinHeapQ(object):
         basic_type = int_type.basic_type
         self.max_size = max_size
         self.levels = log2(max_size)
-        print_ln('levels = %s',self.levels)
+        # print_ln('levels = %s',self.levels)
         self.depth = self.levels - 1
         self.heap = MinHeapORAM(2**self.levels, oram_type, init_rounds, int_type, entry_size=entry_size)
         self.value_index = oram_type(max_size, entry_size=entry_size[1], \
@@ -310,19 +310,20 @@ class MaxHeapQ(object):
         basic_type = int_type.basic_type
         self.max_size = max_size
         self.levels = log2(max_size)
-        print_ln('levels = %s',self.levels)
+        # print_ln('levels = %s',self.levels)
         self.depth = self.levels - 1
         self.heap = MaxHeapORAM(2**self.levels, oram_type, init_rounds, int_type, entry_size=entry_size)
-        self.value_index = oram_type(max_size, entry_size=entry_size[1], \
-                                         init_rounds=init_rounds, \
-                                         value_type=basic_type)
+        # self.value_index = oram_type(max_size, entry_size=entry_size[1], \
+        #                                  init_rounds=init_rounds, \
+        #                                  value_type=basic_type)
         self.size = MemValue(int_type(0))
         self.int_type = int_type
         self.basic_type = basic_type
         # prog.reading('heap queue', 'KS14')
-        print('heap: %d levels, depth %d, size %d, index size %d' % \
-            (self.levels, self.depth, self.heap.oram.size, self.value_index.size))
-    
+        # print('heap: %d levels, depth %d, size %d, index size %d' % \
+        #     (self.levels, self.depth, self.heap.oram.size, self.value_index.size))
+        print('heap: %d levels, depth %d, size %d' % \
+            (self.levels, self.depth, self.heap.oram.size))
     def pop(self, for_real=True):
         '''
         pop and 输出 top 的 (prio, value)
@@ -357,8 +358,8 @@ class MaxHeapQ(object):
             new_parent, new_child = cond_swap(swap, parent, child)
             self.heap.add(childpos, new_child, child_state)
             self.heap.add(parentpos, new_parent, parent_state)
-            self.value_index.access(new_parent.value, parentpos, swap)
-            self.value_index.access(new_child.value, childpos, swap)
+            # self.value_index.access(new_parent.value, parentpos, swap)
+            # self.value_index.access(new_child.value, childpos, swap)
             childpos.write(parentpos)
     @method_block
     def _top(self, for_real=True):
@@ -371,10 +372,10 @@ class MaxHeapQ(object):
     def _pop(self, for_real=True):
         pop_for_real = for_real * (self.size != 0)
         entry = self.heap[1]
-        self.value_index.delete(entry.value, for_real)
+        # self.value_index.delete(entry.value, for_real)
         last = self.heap[self.basic_type(self.size)]
         self.heap.access(1, last, pop_for_real)
-        self.value_index.access(last.value, 1, for_real * (self.size != 1))
+        # self.value_index.access(last.value, 1, for_real * (self.size != 1))
         self.heap.delete(self.basic_type(self.size), for_real)
         self.size -= self.int_type(pop_for_real)
         parentpos = MemValue(self.basic_type(1))
@@ -394,18 +395,18 @@ class MaxHeapQ(object):
             self.heap.add(childpos, new_child, child_state)
             self.heap.add(otherchildpos, other_child, other_state)
             self.heap.add(parentpos, new_parent, parent_state)
-            self.value_index.access(new_parent.value, parentpos, swap)
-            self.value_index.access(new_child.value, childpos, swap)
+            # self.value_index.access(new_parent.value, parentpos, swap)
+            # self.value_index.access(new_child.value, childpos, swap)
             parentpos.write(childpos)
         self.check()
         return (entry.prio, entry.value)
     @method_block
     def _update(self, value, prio, for_real=True):
-        index, not_found = self.value_index.read(value)
-        self.size += self.int_type(not_found * for_real)
-        index = if_else(not_found, self.basic_type(self.size), index[0])
-        self.value_index.access(value, self.basic_type(self.size), \
-                                    not_found * for_real)
+        # index, not_found = self.value_index.read(value)
+        self.size += self.int_type(for_real) #self.int_type(not_found * for_real)
+        index = self.basic_type(self.size) #if_else(not_found, self.basic_type(self.size), index[0])
+        # self.value_index.access(value, self.basic_type(self.size), \
+        #                             not_found * for_real)
         self.heap.access(index, MaxHeapEntry(self.int_type, 0, prio, value), for_real)
         self.bubble_up(index)
         self.check()
@@ -427,22 +428,22 @@ class MaxHeapQ(object):
                 # if not self.heap[i].empty and \
                 #         self.heap[i].value not in self.value_index:
                 #     raise Exception('missing index at %d' % i)
-            for value,(index,empty) in enumerate(self.value_index):
-                if not empty and self.heap[index].value != value:
-                    raise Exception('index violated at %d' % index)
-        if debug_online:
-            @for_range(self.max_size)
-            def f(value):
-                index, not_found = self.value_index.read(value)
-                index, not_found = index[0].reveal(), not_found.reveal()
-                @if_(not_found == 0)
-                def f():
-                    heap_value = self.heap[index].value.reveal()
-                    @if_(heap_value != value)
-                    def f():
-                        print_ln('heap mismatch: %s:%s in index, %s in heap', \
-                                     value, index, heap_value)
-                        crash()            
+        #     for value,(index,empty) in enumerate(self.value_index):
+        #         if not empty and self.heap[index].value != value:
+        #             raise Exception('index violated at %d' % index)
+        # if debug_online:
+        #     @for_range(self.max_size)
+        #     def f(value):
+        #         index, not_found = self.value_index.read(value)
+        #         index, not_found = index[0].reveal(), not_found.reveal()
+        #         @if_(not_found == 0)
+        #         def f():
+        #             heap_value = self.heap[index].value.reveal()
+        #             @if_(heap_value != value)
+        #             def f():
+        #                 print_ln('heap mismatch: %s:%s in index, %s in heap', \
+        #                              value, index, heap_value)
+        #                 crash()            
     def dump(self, msg=''):
         print_ln(msg)
         print_ln('size: %s', self.size.reveal())
@@ -455,12 +456,12 @@ class MaxHeapQ(object):
             for i in range(self.max_size+1):
                 print_str(' %s:%s', *(x.reveal() for x in self.heap.oram[i]))
         print_ln()
-        print_str('value index:')
-        if isinstance(self.value_index, LinearORAM):
-            for entry in self.value_index.ram:
-                print_str(' %s:%s', entry.empty().reveal(), entry.x[0].reveal())
-        else:
-            for i in range(self.max_size):
-                print_str(' %s:%s', i, self.value_index[i].reveal())
-        print_ln()
+        # print_str('value index:')
+        # if isinstance(self.value_index, LinearORAM):
+        #     for entry in self.value_index.ram:
+        #         print_str(' %s:%s', entry.empty().reveal(), entry.x[0].reveal())
+        # else:
+        #     for i in range(self.max_size):
+        #         print_str(' %s:%s', i, self.value_index[i].reveal())
+        # print_ln()
         print_ln()

@@ -10,12 +10,12 @@ MINX = -1000
 MAXX = 1000
 
 D = 4
-M = 16
+M = 5
 MMAX0 = 2 * M
 MMAX = M
-N = 10000
-EF_CONSTRUCTION = 10
-K = 1
+N = 10
+EF_CONSTRUCTION = 5
+K = 3
 
 # --- 数据容器分离 ---
 node = []      # 存储主数据集, 索引 0-N-1
@@ -48,14 +48,14 @@ def distance_node_to_node(idx1, idx2):
     vec1 = node[idx1]
     vec2 = node[idx2]
     res_sq = sum((vec1[i] - vec2[i]) ** 2 for i in range(D))
-    return math.sqrt(res_sq)
+    return res_sq #math.sqrt(res_sq)
 
 def distance_query_to_node(q_idx, node_idx):
     """计算一个查询点和一个主数据集节点之间的距离"""
     vec1 = querynode[q_idx]
     vec2 = node[node_idx]
     res_sq = sum((vec1[i] - vec2[i]) ** 2 for i in range(D))
-    return math.sqrt(res_sq)
+    return res_sq #math.sqrt(res_sq)
 # --- 修改结束 (1/6) ---
 
 def nxt(W):
@@ -243,6 +243,7 @@ def bruteforce_for_query(q_idx):
     W = []
     for i in range(1, N + 1):
         dist = distance_query_to_node(q_idx, i)
+        # print(f"dist = {dist}")
         heapq.heappush(W, (-dist, i))
         if len(W) > K:
             heapq.heappop(W)
@@ -250,7 +251,7 @@ def bruteforce_for_query(q_idx):
     end_time = time.time()
     duration_ms = (end_time - start_time) * 1000
     print("\n暴力搜索结果:", file=sys.stderr)
-    print(' '.join(map(str, ret)), file=sys.stderr)
+    print("序号：", ' '.join(map(str, ret)), file=sys.stderr)
     for r_idx in ret:
         dist = distance_query_to_node(q_idx, r_idx)
         print(f"{node[r_idx]} || {dist:.4f}", file=sys.stderr)
@@ -274,8 +275,8 @@ def main():
     start_insert = time.time()
     for i in range(1, N + 1):
         insert(i, M, MMAX, EF_CONSTRUCTION, ML)
-        if i % (N // 100) == 0:
-            print(f"已插入节点数 = {i} / {N}", file=sys.stderr)
+        # if (i >= N) and (i % (N // 100) == 0):
+        print(f"已插入节点数 = {i} / {N}", file=sys.stderr)
     end_insert = time.time()
     duration_insert = end_insert - start_insert
     print("\nHNSW 图构建完成", file=sys.stderr)
@@ -311,7 +312,7 @@ def main():
         end_query = time.time()
         duration_query_ms = (end_query - start_query) * 1000
 
-        print(' '.join(map(str, knn_res)), file=sys.stderr)
+        print("序号: ",' '.join(map(str, knn_res)), file=sys.stderr)
         for res_idx in knn_res:
             dist = distance_query_to_node(q_idx, res_idx)
             print(f"{node[res_idx]} || {dist:.4f}", file=sys.stderr)
@@ -324,7 +325,7 @@ def main():
         ccnt = sum(1 for res_idx in knn_res if res_idx in brt_set)
         recall = ccnt / K
         ave_recall += recall
-        print(f"\n召回率: {recall:.4f}", file=sys.stderr)
+        print(f"召回率: {recall:.4f}", file=sys.stderr)
         print("-------------------------------------\n", file=sys.stderr)
     # --- 修改结束 (6/6) ---
         
