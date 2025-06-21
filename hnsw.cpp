@@ -282,7 +282,7 @@ vector<int> bruteforce(int q) {
 }
 
 signed main() {
-    gendata();
+    // gendata();
     init();
     cerr << "\n*********************" << endl;
     prt(n);

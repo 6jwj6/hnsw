@@ -3,18 +3,31 @@ from Compiler.types import *
 from Compiler.oram import *
 from Programs.Source.HeapQ import MinHeapQ,MaxHeapQ
 
-
-
+# --- 全局常量和变量 ---
 MINX = -1000
 MAXX = 1000
 
 D = 4  # 向量维度
-M = 16  # 每个节点的最大连接数 (除第0层外)
+M = 5  # 每个节点的最大连接数 (除第0层外)
 MMAX0 = 2 * M  # 第0层的最大连接数
 MMAX = M
-N = 10000  # 数据点数量
-EF_CONSTRUCTION = 10  # 构建索引时的搜索范围大小
-K = 3  # K-NN搜索中的K值
+N = 10  # 数据点数量
+EF_CONSTRUCTION = 5  # 构建索引时的搜索范围大小
+K = 1  # K-NN搜索中的K值
+
+# 数据和图结构
+# 'node' 将在 init() 中加载或在 gendata() 后填充
+# node = [[0] * D for _ in range(N + 1)] # node[0] 不使用
+node =  OptimalORAM(size = N+10, value_length = MMAX0+10)
+edge = [[]]  # 邻接表, edge[0] 作为占位符
+ite = [0]   # 索引到节点ID的映射, ite[0] 作为占位符
+
+# HNSW 算法状态
+L = 0  # 当前最高层数
+EP = 1  # 入口点 (entry point) 的索引
+nodecnt = 0  # 图中节点的总数 (跨所有层)
+ML = 1 / math.log(M)
+
 
 def tryoram():
     x = OptimalORAM(size = 32, value_length = 4)
@@ -66,17 +79,42 @@ def tryheapq():
     print_ln('-'*50+'END'+'-'*50)
 
 def test():
-    a = OptimalORAM(size = 101, value_length = 100)
+    a = OptimalORAM(size = 101, value_length = MMAX0+10)
     for i in range(10):
         tmp = sint.Array(4)
         tmp.input_from(1)
         print_ln('%s',type(tmp))
         print_ln('%s',tmp.reveal_list())
-        a.access(i, tuplify([*tmp]), True)
-        print_ln('x[1][2] = %s',a[i][3].reveal())
+        # a.access(i,[*tmp],True)
+        # a.access(i, tuplify([*tmp]), True)
+        # a[i] = tuplify([*tmp])
+        a[i] = [*tmp]
+        # print_ln('%s',[a[i][j].reveal() for j in range(D)])
+        print_ln('a[i][3] = %s',a[i][3].reveal())
         a.delete(i)
-        print_ln('%s', a[1][2].reveal())
+        print_ln('%s', a[i][2].reveal())
+
+# --- 初始化和主程序 ---
+def init():
+    """从文件加载数据"""
+    print_ln("开始读取数据...")
+    tmp = sint.Array(D)
+    for i in range(1, N + 1):
+                tmp.input_from(1)
+                node[i] = [*tmp]
+    print_ln("完成读取 data.txt")
+    
+    # 打印前3个节点以供验证 (这部分代码保持不变)
+    # 确保在调用此函数前 node 已经被初始化为一个字典
+    if N >= 3:
+        for i in range(1, 4):
+            print_ln("节点 %s: %s", i, [node[i][j].reveal() for j in range(D)])
+
+def bruteforce():
+    
+    return 
 
 print_ln('-'*50+'RESULT'+'-'*50)
+init()
 test()
 print_ln('-'*50+'END'+'-'*50)
