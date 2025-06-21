@@ -3,7 +3,7 @@ from Compiler.types import *
 from Compiler.oram import *
 from Programs.Source.HeapQ import MinHeapQ,MaxHeapQ
 
-print_ln('-'*50+'RESULT'+'-'*50)
+
 
 MINX = -1000
 MAXX = 1000
@@ -16,59 +16,67 @@ N = 10000  # 数据点数量
 EF_CONSTRUCTION = 10  # 构建索引时的搜索范围大小
 K = 3  # K-NN搜索中的K值
 
-# x = OptimalORAM(size = 32, value_length = 4)
-# x.access(sint(1), (2,3,4,2), True)
-# va = x[1]
-# vv = va[2] # tuple [0,3]
-# print_ln('x[1][2] = %s',vv.reveal())
-# x.delete(1)
-# print_ln('%s', x[1][2].reveal())
+def tryoram():
+    x = OptimalORAM(size = 32, value_length = 4)
+    x.access(sint(1), (2,3,4,2), True)
+    va = x[1]
+    vv = va[2] # tuple [0,3]
+    print_ln('x[1][2] = %s',vv.reveal())
+    x.delete(1)
+    print_ln('%s', x[1][2].reveal())
 
-# Q = MaxHeapQ(max_size=100, # Defines value range [0, max_size-1] and heap capacity
-#         #   oram_type=OptimalORAM,
-#         #   int_type=sint,
-#         #   entry_size=(10, 6) # (priority_bits, value_bits) for HeapEntry
-# )
+def tryheapq():
+    Q = MaxHeapQ(max_size=100, # Defines value range [0, max_size-1] and heap capacity
+            #   oram_type=OptimalORAM,
+            #   int_type=sint,
+            #   entry_size=(10, 6) # (priority_bits, value_bits) for HeapEntry
+    )
 
-# for i in range(10):
-#     op = sint.get_input_from(0)
-#     x = sint.get_input_from(0)
-#     x = x + 100
-#     pos = i + 130
-#     Q.update(pos, x, op==1)
-#     entry_Pop = Q.pop(op==0)
-#     entry_Top = Q.top(op==2)
-    
-#     @if_((op==1).reveal())
-#     def _():
-#         print_ln('%s inserted at %s...', x.reveal(), pos)
-#         print_ln('size = %s',Q.size.reveal())
+    for i in range(10):
+        op = sint.get_input_from(0)
+        x = sint.get_input_from(0)
+        x = x + 100
+        pos = i + 130
+        Q.update(pos, x, op==1)
+        entry_Pop = Q.pop(op==0)
+        entry_Top = Q.top(op==2)
+        
+        @if_((op==1).reveal())
+        def _():
+            print_ln('%s inserted at %s...', x.reveal(), pos)
+            print_ln('size = %s',Q.size.reveal())
 
-#     @if_((op==0).reveal())
-#     def _():
-#         print_ln('%s poped...', entry_Pop[0].reveal())
-#         print_ln('size = %s',Q.size.reveal())
+        @if_((op==0).reveal())
+        def _():
+            print_ln('%s poped...', entry_Pop[0].reveal())
+            print_ln('size = %s',Q.size.reveal())
 
-#     @if_((op==2).reveal())
-#     def _():
-#         print_ln('%s is the top...', entry_Top[0].reveal())
-#         print_ln('size = %s',Q.size.reveal())
+        @if_((op==2).reveal())
+        def _():
+            print_ln('%s is the top...', entry_Top[0].reveal())
+            print_ln('size = %s',Q.size.reveal())
 
-#     over_size = Q.size > 3
-#     @if_(over_size.reveal())
-#     def _():
-#         ee = Q.pop(over_size)
-#         print_ln('size > 3, %s poped...', ee[0].reveal())
-#         print_ln('size = %s',Q.size.reveal())
+        over_size = Q.size > 3
+        @if_(over_size.reveal())
+        def _():
+            ee = Q.pop(over_size)
+            print_ln('size > 3, %s poped...', ee[0].reveal())
+            print_ln('size = %s',Q.size.reveal())
 
-# print_ln('-'*50+'END'+'-'*50)
+    print_ln('-'*50+'END'+'-'*50)
 
+def test():
+    a = OptimalORAM(size = 101, value_length = 100)
+    for i in range(10):
+        tmp = sint.Array(4)
+        tmp.input_from(1)
+        print_ln('%s',type(tmp))
+        print_ln('%s',tmp.reveal_list())
+        a.access(i, tuplify([*tmp]), True)
+        print_ln('x[1][2] = %s',a[i][3].reveal())
+        a.delete(i)
+        print_ln('%s', a[1][2].reveal())
 
-a = OptimalORAM(size = 101, value_length = 4)
-tmp = sint.Array(4)
-tmp.input_from(1)
-print_ln('%s',type(tmp))
-a.access(sint(1), tuplify([*tmp]), True)
-print_ln('x[1][2] = %s',a[1][2].reveal())
-a.delete(1)
-print_ln('%s', a[1][2].reveal())
+print_ln('-'*50+'RESULT'+'-'*50)
+test()
+print_ln('-'*50+'END'+'-'*50)
