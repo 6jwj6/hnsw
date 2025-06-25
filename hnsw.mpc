@@ -12,18 +12,20 @@ D = 4  # 向量维度
 M = 5  # 每个节点的最大连接数 (除第0层外)
 MMAX0 = 2 * M  # 第0层的最大连接数
 MMAX = M
-N = 10000  # 数据点数量
+N = 10  # 数据点数量
 EF_CONSTRUCTION = 5  # 构建索引时的搜索范围大小
 K = 3  # K-NN搜索中的K值
+Maxloop = EF_CONSTRUCTION*EF_CONSTRUCTION
 NlgN = N * (int)(math.log2(N))
 # 数据和图结构
 node =  OptimalORAM(size = N + 1, value_length = D)
+
 # edge = OptimalORAM(size = N + 1, value_length = MMAX0 + 5)  # 邻接表, edge[0] 作为占位符
 # edgelen = OptimalORAM(size = N + 1)
 edge = [[0 for _ in range(MMAX0 + 5)] for _ in range(N)]
 edgelen = [0 for _ in range(N + 1)]
 ite = OptimalORAM(size = NlgN)   # 索引到节点ID的映射, ite[0] 作为占位符
-
+vis =  OptimalORAM(size = NlgN)
 # HNSW 算法状态
 L = 0  # 当前最高层数
 EP = 1  # 入口点 (entry point) 的索引
@@ -140,7 +142,28 @@ def nxt(W):
     return [i + 1 for i in W]
 
 def search_layer(q_idx, ep, ef, lc):
-    return
+    v = set(ep)
+    # 调用 node-to-node 距离函数
+    C = [(distance_node_to_node(q_idx, ite[x]), x) for x in ep]
+    heapq.heapify(C)
+    W = [(-distance_node_to_node(q_idx, ite[x]), x) for x in ep]
+    heapq.heapify(W)
+
+    while C:
+        dist_c, c_node_idx = heapq.heappop(C)
+        if dist_c > -W[0][0]:
+            break
+        for e_node_idx in edge[c_node_idx]:
+            if e_node_idx not in v:
+                v.add(e_node_idx)
+                # 调用 node-to-node 距离函数
+                dist_e = distance_node_to_node(q_idx, ite[e_node_idx])
+                if len(W) < ef or dist_e < -W[0][0]:
+                    heapq.heappush(C, (dist_e, e_node_idx))
+                    heapq.heappush(W, (-dist_e, e_node_idx))
+                    if len(W) > ef:
+                        heapq.heappop(W)
+    return [item[1] for item in sorted(W, key=lambda x: x[0], reverse=True)]
 
 def search_layer_for_query(q_idx, ep, ef, lc):
     return

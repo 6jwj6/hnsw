@@ -216,7 +216,7 @@ for q_idx in range(9,11):
     print_ln("当前查询点 (索引 %s) 为 (%s)",q_idx,
                 [querynode[q_idx][_].reveal() for _ in range(D)])
    
-    # bruteforce_for_query_heap(q_idx)
+    bruteforce_for_query_heap(q_idx)
     bruteforce_for_query_sort(q_idx)
    
 print_ln('-'*50+'END'+'-'*50)

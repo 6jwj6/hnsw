@@ -10,12 +10,12 @@ MINX = -1000
 MAXX = 1000
 
 D = 4
-M = 6
+M = 5
 MMAX0 = 2 * M
 MMAX = M
-N = 10000
-EF_CONSTRUCTION = 10
-K = 1
+N = 1000
+EF_CONSTRUCTION = 5
+K = 3
 
 # --- 数据容器分离 ---
 node = []      # 存储主数据集, 索引 0-N-1
@@ -30,6 +30,7 @@ EP = 1
 nodecnt = 0
 ML = 1 / math.log(M)
 
+maxloop = 0
 # --- 辅助函数 ---
 def gendata(num=N, dim=D):
     """生成随机数据并写入 data.txt"""
@@ -75,13 +76,15 @@ def search_layer(q_idx, ep, ef, lc):
     heapq.heapify(C)
     W = [(-distance_node_to_node(q_idx, ite[x]), x) for x in ep]
     heapq.heapify(W)
-
+    rec = 0
     while C:
+        # rec += 1
         dist_c, c_node_idx = heapq.heappop(C)
         if dist_c > -W[0][0]:
             break
         for e_node_idx in edge[c_node_idx]:
-            if e_node_idx not in v:
+            rec += 1
+            if False or (e_node_idx not in v):
                 v.add(e_node_idx)
                 # 调用 node-to-node 距离函数
                 dist_e = distance_node_to_node(q_idx, ite[e_node_idx])
@@ -90,7 +93,12 @@ def search_layer(q_idx, ep, ef, lc):
                     heapq.heappush(W, (-dist_e, e_node_idx))
                     if len(W) > ef:
                         heapq.heappop(W)
-    return [item[1] for item in sorted(W, key=lambda x: x[0], reverse=True)]
+    # return [item[1] for item in sorted(W, key=lambda x: x[0], reverse=True)]
+    print(f"rec = {rec}")
+    global maxloop
+    maxloop = max(maxloop, rec)
+    return [item[1] for item in W]
+    
 # --- 修改结束 (2/6) ---
 
 # --- 修改开始 (3/6): 为查询流程创建 search_layer_for_query ---
@@ -106,12 +114,14 @@ def search_layer_for_query(q_idx, ep, ef, lc):
     heapq.heapify(C)
     W = [(-distance_query_to_node(q_idx, ite[x]), x) for x in ep]
     heapq.heapify(W)
-
+    rec = 0
     while C:
+        # rec += 1
         dist_c, c_node_idx = heapq.heappop(C)
         if dist_c > -W[0][0]:
             break
         for e_node_idx in edge[c_node_idx]:
+            rec += 1
             if e_node_idx not in v:
                 v.add(e_node_idx)
                 # 调用 query-to-node 距离函数
@@ -121,6 +131,9 @@ def search_layer_for_query(q_idx, ep, ef, lc):
                     heapq.heappush(W, (-dist_e, e_node_idx))
                     if len(W) > ef:
                         heapq.heappop(W)
+    print(f"rec = {rec}")
+    global maxloop
+    maxloop = max(maxloop, rec)
     return [item[1] for item in sorted(W, key=lambda x: x[0], reverse=True)]
 # --- 修改结束 (3/6) ---
 def select_neighbors_simple(q_idx, C, M_conn, lc):
@@ -274,7 +287,7 @@ def bruteforce_for_query(q_idx):
 
 def main():
     """主执行函数"""
-    # gendata()
+    gendata()
     init()
     
     print("\n*********************", file=sys.stderr)
@@ -344,6 +357,6 @@ def main():
         
     print(f"平均召回率: {ave_recall / nq:.4f}", file=sys.stderr)
     print(f"插入耗时: {duration_insert:.4f} seconds", file=sys.stderr)
-
+    print(f"maxloop = {maxloop}")
 if __name__ == "__main__":
     main()
