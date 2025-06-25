@@ -112,6 +112,7 @@ vector<int> SELECT_NEIGHBORS_SIMPLE(int q, vector<int> C, int M, int lc) {
     return ret;
 }
 vector<int> SELECT_NEIGHBORS_HEURISTIC(int q, vector<int> C, int M, int lc, bool extandCandidates = false, bool keepPrunedConnections = true) {
+    // 现在是错的，相对于simple
     priority_queue<pii, vector<pii>, greater<pii>> R;
     priority_queue<pii, vector<pii>, greater<pii>> W;
     for (auto x : C)

@@ -20,12 +20,12 @@ const int minx = -1000;
 const int maxx = 1000;
 
 const int d = 4;
-const int M = 5;
+const int M = 6;
 const int Mmax0 = 2 * M;
 const int Mmax = M;
-const int n = 10;
-const int efConstruction = 5;
-const int K = 3;
+const int n = 10000;
+const int efConstruction = 10;
+const int K = 1;
 
 std::random_device rd;
 std::mt19937 gen(rd());
@@ -172,9 +172,23 @@ vector<int> SEARCH_LAYER_FOR_QUERY(int q, vector<int> ep, int ef, int lc) {
     return ret;
 }
 // --- 修改结束 ---
-
+vector<int> SELECT_NEIGHBORS_SIMPLE(int q, vector<int> C, int M, int lc) {
+    priority_queue<pair<int, int>> W;
+    for (auto x : C) {
+        W.push(make_pair(distance_node_to_node(q, ite[x]), x));
+        if ((int)(W.size()) > M)
+            W.pop();
+    }
+    vector<int> ret;
+    while (!W.empty()) {
+        ret.emplace_back(W.top().second);
+        W.pop();
+    }
+    return ret;
+}
 // --- 修改: SELECT_NEIGHBORS_HEURISTIC 内部调用专用的距离函数 ---
 vector<int> SELECT_NEIGHBORS_HEURISTIC(int q, vector<int> C, int M, int lc, bool extandCandidates = false, bool keepPrunedConnections = true) {
+    // 要改掉，现在是错的
     priority_queue<pii, vector<pii>, greater<pii>> R;
     priority_queue<pii, vector<pii>, greater<pii>> W;
     for (auto x : C)
@@ -242,12 +256,12 @@ void INSERT(int q, int M_val, int Mmax_val, int efConstruction_val, double mL_va
         ++nodecnt;
         ite.emplace_back(q);
         W = SEARCH_LAYER(q, ep, efConstruction_val, lc);
-        vector<int> neighbors = SELECT_NEIGHBORS_HEURISTIC(q, W, M_val, lc);
+        vector<int> neighbors = SELECT_NEIGHBORS_SIMPLE(q, W, M_val, lc);
         edge.emplace_back(neighbors);
         for (auto e : neighbors) {
             edge[e].emplace_back(nodecnt);
             if ((int)(edge[e].size()) > current_Mmax) {
-                vector<int> eNewConn = SELECT_NEIGHBORS_HEURISTIC(ite[e], edge[e], current_Mmax, lc);
+                vector<int> eNewConn = SELECT_NEIGHBORS_SIMPLE(ite[e], edge[e], current_Mmax, lc);
                 edge[e] = eNewConn;
             }
         }

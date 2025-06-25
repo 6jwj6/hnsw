@@ -10,12 +10,12 @@ MINX = -1000
 MAXX = 1000
 
 D = 4
-M = 5
+M = 6
 MMAX0 = 2 * M
 MMAX = M
-N = 10
-EF_CONSTRUCTION = 5
-K = 3
+N = 10000
+EF_CONSTRUCTION = 10
+K = 1
 
 # --- 数据容器分离 ---
 node = []      # 存储主数据集, 索引 0-N-1
@@ -123,13 +123,20 @@ def search_layer_for_query(q_idx, ep, ef, lc):
                         heapq.heappop(W)
     return [item[1] for item in sorted(W, key=lambda x: x[0], reverse=True)]
 # --- 修改结束 (3/6) ---
+def select_neighbors_simple(q_idx, C, M_conn, lc):
+    R = [] 
+    W = [] # 工作小顶堆 (距离, 图索引)
+    for x in C:
+        heapq.heappush(W, (distance_node_to_node(q_idx, ite[x]), x))
+    while W and len(R) < M_conn:
+        R.append(heapq.heappop(W)[1])
+    return R
 
 # select_neighbors_heuristic 只被 insert 调用，所以它也只处理 node 内部的距离
 def select_neighbors_heuristic(q_idx, C, M_conn, lc, extend_candidates=False, keep_pruned_connections=True):
     R, W, Wd = [], [], []
     for x in C:
         heapq.heappush(W, (distance_node_to_node(q_idx, ite[x]), x))
-    # ... (其余逻辑不变)
     if extend_candidates:
         st = set(C)
         for e in C:
@@ -139,14 +146,20 @@ def select_neighbors_heuristic(q_idx, C, M_conn, lc, extend_candidates=False, ke
                     heapq.heappush(W, (distance_node_to_node(q_idx, ite[e_adj]), e_adj))
     while W and len(R) < M_conn:
         dist_e, e_node_idx = heapq.heappop(W)
-        if not R or dist_e < R[0][0]:
-            heapq.heappush(R, (dist_e, e_node_idx))
+        flag = False
+        for x in R:
+            if distance_node_to_node(ite[e_node_idx], ite[x]) < dist_e:
+                flag = True
+                break
+        if (not R) or flag:
+            R.append(e_node_idx)
         else:
-            heapq.heappush(Wd, (dist_e, e_node_idx))
+            Wd.append(e_node_idx)
     if keep_pruned_connections:
-        while Wd and len(R) < M_conn:
-            heapq.heappush(R, heapq.heappop(Wd))
-    return [item[1] for item in R]
+        for x in Wd:
+            if len(R) >= M_conn: break
+            R.append(x)
+    return R
 
 # insert 函数逻辑不变，因为它总是处理主数据集内部的节点
 def insert(q_idx, M_param, Mmax_param, efConstruction_param, mL_param):
@@ -172,14 +185,14 @@ def insert(q_idx, M_param, Mmax_param, efConstruction_param, mL_param):
         if not W:
             edge.append([])
             continue
-        neighbors = select_neighbors_heuristic(q_idx, W, M_param, lc)
+        neighbors = select_neighbors_simple(q_idx, W, M_param, lc)
         edge.append(neighbors)
         new_node_graph_idx = nodecnt
         for e_node_idx in neighbors:
             edge[e_node_idx].append(new_node_graph_idx)
             if len(edge[e_node_idx]) > m_max_lc:
                 e_conn = edge[e_node_idx]
-                e_new_conn = select_neighbors_heuristic(ite[e_node_idx], e_conn, m_max_lc, lc)
+                e_new_conn = select_neighbors_simple(ite[e_node_idx], e_conn, m_max_lc, lc)
                 edge[e_node_idx] = e_new_conn
         current_ep = nxt(W)
     if l > L:

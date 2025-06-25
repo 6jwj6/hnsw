@@ -145,29 +145,17 @@ def search_layer(q_idx, ep, ef, lc):
 def search_layer_for_query(q_idx, ep, ef, lc):
     return
 
-def select_neighbors_heuristic(q_idx, C, M_conn, lc, extend_candidates=False, keep_pruned_connections=True):
-    R, W, Wd = [], [], []
-    for x in C:
-        heapq.heappush(W, (distance_node_to_node(q_idx, ite[x]), x))
+def select_neighbors_simple(q_idx, C, M_conn, lc):
+    R = []
+    W = sint.Tensor([len(C), 2]) # 工作小顶堆 (距离, 图索引)
+    for i in range(len(C)):
+        W[i] = (distance_node_to_node(q_idx, ite[C[i]]), C[i])
+    W.sort()
+    R = W.get_vector_by_indices(None, 1)[:M_conn:]
+    return R
 
-    # # ... (其余逻辑不变)
-    # if extend_candidates:
-    #     st = set(C)
-    #     for e in C:
-    #         for e_adj in edge[e]:
-    #             if e_adj not in st:
-    #                 st.add(e_adj)
-    #                 heapq.heappush(W, (distance_node_to_node(q_idx, ite[e_adj]), e_adj))
-    while W and len(R) < M_conn:
-        dist_e, e_node_idx = heapq.heappop(W)
-        if not R or dist_e < R[0][0]:
-            heapq.heappush(R, (dist_e, e_node_idx))
-        else:
-            heapq.heappush(Wd, (dist_e, e_node_idx))
-    if keep_pruned_connections:
-        while Wd and len(R) < M_conn:
-            heapq.heappush(R, heapq.heappop(Wd))
-    return [item[1] for item in R]
+# def select_neighbors_heuristic(q_idx, C, M_conn, lc, extend_candidates=False, keep_pruned_connections=True):
+'''heap效果不佳'''
 
 def insert(q_idx, M_param, Mmax_param, efConstruction_param, mL_param):
     global L, EP, nodecnt
@@ -197,9 +185,9 @@ def insert(q_idx, M_param, Mmax_param, efConstruction_param, mL_param):
         W = search_layer(q_idx, current_ep, efConstruction_param, lc)
         if not W:
             # edge.append([])
-            # '''wrong'''
+            # '''wrong''' 
             continue
-        neighbors = select_neighbors_heuristic(q_idx, W, M_param, lc)
+        neighbors = select_neighbors_simple(q_idx, W, M_param, lc)
         # edge.append(neighbors)
         '''这里不知道个数，需要再处理。目前的处理是用 edgelen 来记录长度。append 就是在 edgelen 位置赋值'''
         edge[nodecnt] = neighbors
@@ -215,7 +203,7 @@ def insert(q_idx, M_param, Mmax_param, efConstruction_param, mL_param):
             # if edgelen[e_node_idx] > m_max_lc:
                 # '''没了'''
                 e_conn = edge[e_node_idx]
-                e_new_conn = select_neighbors_heuristic(ite[e_node_idx], e_conn, m_max_lc, lc)
+                e_new_conn = select_neighbors_simple(ite[e_node_idx], e_conn, m_max_lc, lc)
                 edge[e_node_idx] = e_new_conn
                 edgelen[e_node_idx] = len(e_new_conn)
                 # '''这里传的是 [] 还是 oram 要再决定一下。或者说 oram 型的怎么传成 [] ，直接[] '''

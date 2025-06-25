@@ -12,19 +12,15 @@ D = 4  # 向量维度
 M = 5  # 每个节点的最大连接数 (除第0层外)
 MMAX0 = 2 * M  # 第0层的最大连接数
 MMAX = M
-N = 100 # 数据点数量
+N = 1000 # 数据点数量
 EF_CONSTRUCTION = 5  # 构建索引时的搜索范围大小
 K = 3  # K-NN搜索中的K值
-NlgN = N * (int)(math.log2(N))
+# NlgN = N * (int)(math.log2(N))
 # 数据和图结构
-# node =  OptimalORAM(size = N + 1, value_length = D)
+
 # node = [[] for _ in range(N + 1)]
 node = sint.Tensor([N+1,D])
-# edge = OptimalORAM(size = N + 1, value_length = MMAX0 + 5)  # 邻接表, edge[0] 作为占位符
-# edgelen = OptimalORAM(size = N + 1)
-edge = [[0 for _ in range(MMAX0 + 5)] for _ in range(N)]
-edgelen = [0 for _ in range(N + 1)]
-ite = OptimalORAM(size = NlgN)   # 索引到节点ID的映射, ite[0] 作为占位符
+
 
 # HNSW 算法状态
 L = 0  # 当前最高层数
@@ -220,8 +216,7 @@ for q_idx in range(9,11):
     print_ln("当前查询点 (索引 %s) 为 (%s)",q_idx,
                 [querynode[q_idx][_].reveal() for _ in range(D)])
    
-    # 调用查询专用的暴力搜索函数    
-    # brt_res = bruteforce_for_query_heap(q_idx)
+    # bruteforce_for_query_heap(q_idx)
     bruteforce_for_query_sort(q_idx)
    
 print_ln('-'*50+'END'+'-'*50)
