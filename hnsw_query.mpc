@@ -12,8 +12,8 @@ D = 4  # 向量维度
 M = 6  # 每个节点的最大连接数 (除第0层外)
 MMAX0 = 2 * M  # 第0层的最大连接数
 MMAX = M
-N = 10  # 数据点数量
-EF_CONSTRUCTION = 5  # 构建索引时的搜索范围大小
+N = 100 # 数据点数量
+EF_CONSTRUCTION = 7  # 构建索引时的搜索范围大小
 K = 1  # K-NN搜索中的K值
 
 Maxloop = EF_CONSTRUCTION*EF_CONSTRUCTION
@@ -71,11 +71,11 @@ def search_layer_for_query(q_idx, ep, ef, lc):
     W.assign_all(MD)
     W[0] = (distance_query_to_node(q_idx, ite[ep[0]]), ep[0])
     # running = MemValue(sint(1))
-    maxloop = 5
+    maxloop = 10
     # while C:
     @for_range_opt(maxloop)
     def _(loop_t):
-        print_ln('loop_t = %s', loop_t)
+        print_ln('--loop_t = %s', loop_t)
         dist_c, c_node_idx = C[0]
         print_ln('c_node_idx = %s, dis = %s', 
                  c_node_idx.reveal(), dist_c.reveal())
@@ -92,9 +92,9 @@ def search_layer_for_query(q_idx, ep, ef, lc):
         @for_range_opt(MMAX0)
         def _(index):
             e_node_idx = tmp_edge[index]
-            # print_ln('index = %s, e_node_idx = %s', index, e_node_idx.reveal())
+            print_ln('index = %s, e_node_idx = %s', index, e_node_idx.reveal())
             insert_flag = (v[e_node_idx] != q_idx)
-            # print_ln('insert_flag = %s',insert_flag.reveal())
+            print_ln('insert_flag = %s',insert_flag.reveal())
             # if e_node_idx not in v:
             dist_e = distance_query_to_node(q_idx, ite[e_node_idx])
                 # v.add(e_node_idx)
@@ -106,7 +106,7 @@ def search_layer_for_query(q_idx, ep, ef, lc):
             tp_1 = insert_flag.if_else(e_node_idx, 0)
             # 将选择出的结果重新组合成元组
             tp = (tp_0, tp_1)
-            # print_ln('tp = (%s,%s)', tp_0.reveal(), tp_1.reveal())
+            print_ln('tp = (%s,%s)', tp_0.reveal(), tp_1.reveal())
             # tp = insert_flag.if_else((dist_e,e_node_idx), (MD,0))
                     # heapq.heappush(C, (dist_e, e_node_idx))
                     # heapq.heappush(W, (-dist_e, e_node_idx))
@@ -116,8 +116,8 @@ def search_layer_for_query(q_idx, ep, ef, lc):
             W[MW-index] = tp
         C.sort()
         W.sort()
-        # tmp_ef = W.get_vector_by_indices(None, 1)[:ef]
-        # print_ln('W[:ef] = %s',[x.reveal() for x in tmp_ef])
+        tmp_ef = W.get_vector_by_indices(None, 1)[:ef]
+        print_ln('W[:ef] = %s',[x.reveal() for x in tmp_ef])
     # return [item[1] for item in sorted(W, key=lambda x: x[0], reverse=True)]
     return W.get_vector_by_indices(None, 1)[:ef:]
 
@@ -236,7 +236,8 @@ def main():
         print_ln("\n--------------------------------")
         print_ln("当前查询点 (索引 %s) 为 (%s)", q_idx,
                                     querynode[q_idx].reveal())
-        
+        brt_res = bruteforce_for_query_sort(q_idx)
+        brt_clr = [x.reveal() for x in brt_res]
         print_ln("\nq 的 K-ANN 搜索结果:")
         # start_query = time.time()
         # # 调用查询专用函数 k_nn_search，并传递查询索引
@@ -252,8 +253,8 @@ def main():
 
         # 调用查询专用的暴力搜索函数    
         # brt_res = bruteforce_for_query_heap(q_idx)
-        brt_res = bruteforce_for_query_sort(q_idx)
-        brt_clr = [x.reveal() for x in brt_res]
+        # brt_res = bruteforce_for_query_sort(q_idx)
+        # brt_clr = [x.reveal() for x in brt_res]
         # brt_set = set(brt_clr)
         # ccnt = sum(1 for res_idx in knn_clr if res_idx in brt_set)
         ccnt = (knn_clr[0]==brt_clr[0]).if_else(1, 0)
