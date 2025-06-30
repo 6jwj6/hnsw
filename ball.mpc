@@ -58,18 +58,35 @@ from Compiler.mpc_math import *
 # a.access()
 # print_ln('%s', type(a))
 
-MMAX0 = 12
-EP = sint.get_input_from(2).reveal()
-L = sint.get_input_from(2).reveal()
-NodeCnt = sint.get_input_from(2).reveal()
-print_ln("完成读取 EP, L, NodeCnt ...")
+# MMAX0 = 12
+# EP = sint.get_input_from(2).reveal()
+# L = sint.get_input_from(2).reveal()
+# NodeCnt = sint.get_input_from(2).reveal()
+# print_ln("完成读取 EP, L, NodeCnt ...")
 
-print_ln("开始读取 edge ...")
-tmp = sint.Array(4)
-edge = OptimalORAM(size = 100, value_length = 4)
-@for_range_opt(100)
+# print_ln("开始读取 edge ...")
+# tmp = sint.Array(4)
+# edge = OptimalORAM(size = 100, value_length = 4)
+# @for_range_opt(100)
+# def _(i):
+#     tmp.input_from(2)
+#     edge[i] = [*(tmp.get_vector())]
+#     print_ln('%s',[edge[i][_].reveal() for _ in range(4)])
+# print_ln("完成读取 edge ...")
+
+# W = [MemValue(1)]
+# L = cint(1)
+# @for_range_opt(L,0,-1)
+# def _(i):
+#     # nonlocal W
+#     # W = [W[0] + 1]
+#     W[0].write(W[0]+2)
+#     print_ln('%s', W[0])
+#     print_ln('%s', i)
+
+C = sint.Tensor([10, 2])
+@for_range_opt(10)
 def _(i):
-    tmp.input_from(2)
-    edge[i] = [*(tmp.get_vector())]
-    print_ln('%s',[edge[i][_].reveal() for _ in range(4)])
-print_ln("完成读取 edge ...")
+    C[i] = (10-i,i)
+C.sort()
+print_ln('%s',C[0][1].reveal())

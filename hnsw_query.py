@@ -14,8 +14,8 @@ D = 4
 M = 6
 MMAX0 = 2 * M
 MMAX = M
-N = 100
-EF_CONSTRUCTION = 10
+N = 10
+EF_CONSTRUCTION = 5
 K = 1
 
 # --- 数据容器分离 ---
@@ -314,10 +314,7 @@ def query(printflag = True):
     if printflag:
         ave_recall = 0.0
         # --- 修改开始 (6/6): 修改查询循环和函数调用 ---
-        for i in range(nq):
-            # 现在的 q_idx 就是 querynode 列表的索引 (0, 1, 2...)
-            q_idx = i
-            
+        for q_idx in range(nq):
             print("\n--------------------------------", file=sys.stderr)
             q_vec = querynode[q_idx]
             q_vec_str = ", ".join(map(str, q_vec))
@@ -365,8 +362,8 @@ def query(printflag = True):
 
 def main():
     """主执行函数"""
-    # gendata()
-    init()
+    gendata()
+    # init()
     
     print("\n*********************", file=sys.stderr)
     print(f"N (数据点数): {N}", file=sys.stderr)
@@ -387,7 +384,7 @@ def main():
     print("\nHNSW 图构建完成", file=sys.stderr)
     print(f"建图耗时: {duration_insert:.4f} seconds", file=sys.stderr)
     
-    printgraph()
+    # printgraph()
     # --- 修改开始 (5/6): 将查询点存入新的 querynode 列表 ---
     query(False)
     
