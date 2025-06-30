@@ -347,10 +347,7 @@ def query(printflag = True):
             print("-------------------------------------\n", file=sys.stderr)
     else:
         ave_recall = 0.0
-        for i in range(nq):
-            # 现在的 q_idx 就是 querynode 列表的索引 (0, 1, 2...)
-            q_idx = i
-   
+        for q_idx in range(nq):
             # 调用查询专用函数 k_nn_search，并传递查询索引
             knn_res = k_nn_search(q_idx, K, EF_CONSTRUCTION)
             # 调用查询专用的暴力搜索函数
