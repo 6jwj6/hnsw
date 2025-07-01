@@ -12,19 +12,21 @@ D = 4  # 向量维度
 M = 6  # 每个节点的最大连接数 (除第0层外)
 MMAX0 = 2 * M  # 第0层的最大连接数
 MMAX = M
-N = 100 # 数据点数量
+N = 200000# 数据点数量
 EF_CONSTRUCTION = 10  # 构建索引时的搜索范围大小
-K = 1  # K-NN搜索中的K值
+K = 2 # K-NN搜索中的K值
 
 Maxloop = EF_CONSTRUCTION*EF_CONSTRUCTION
 # 数据和图结构
-node =  OptimalORAM(size = N + 1, value_length = D) # 邻接表, edge[0] 作为占位符
+# node =  OptimalORAM(size = N + 1, value_length = D) # 邻接表, edge[0] 作为占位符
+node = sint.Tensor([N+1, D])
 node_brt = sint.Tensor([N + 1, D])
 querynode = None
 MaxNodeCnt = (int)(N*M/(M-1) + 6*math.sqrt(N*M)/(M-1)) #总点数期望值
-edge = OptimalORAM(size = MaxNodeCnt, value_length = MMAX0)
-ite = OptimalORAM(size = MaxNodeCnt)   # 索引到节点ID的映射, ite[0] 作为占位符
-
+# edge = OptimalORAM(size = MaxNodeCnt, value_length = MMAX0)
+# ite = OptimalORAM(size = MaxNodeCnt)   # 索引到节点ID的映射, ite[0] 作为占位符
+edge = sint.Tensor([MaxNodeCnt, MMAX0])
+ite = sint.Array(MaxNodeCnt)
 # HNSW 算法状态
 L = None  # 当前最高层数
 EP = None # 入口点 (entry point) 的索引
@@ -53,7 +55,7 @@ def nxt(W):
     return [i + 1 for i in W]
 
 def search_layer_for_query(q_idx, ep, ef, lc):
-    v = OptimalORAM(MaxNodeCnt)
+    v = sint.Array(MaxNodeCnt)
     # 调用 query-to-node 距离函数
     # C = [(distance_query_to_node(q_idx, ite[x]), x) for x in ep]
     # heapq.heapify(C)
@@ -66,19 +68,20 @@ def search_layer_for_query(q_idx, ep, ef, lc):
     MW = K + MMAX0
     C = sint.Tensor([MC+1, 2])
     C.assign_all(MD)
-    C[0] = (distance_query_to_node(q_idx, ite[ep[0]]), ep[0])
+    C[0] = (distance_query_to_node(q_idx, ite[ep[0]].reveal()), ep[0])
     W = sint.Tensor([MW+1, 2])
     W.assign_all(MD)
-    W[0] = (distance_query_to_node(q_idx, ite[ep[0]]), ep[0])
+    W[0] = (distance_query_to_node(q_idx, ite[ep[0]].reveal()), ep[0])
     # running = MemValue(sint(1))
-    maxloop = 5
+    maxloop = 45
     # while C:
     @for_range_opt(maxloop)
     def _(loop_t):
         print_ln('--loop_t = %s', loop_t)
         dist_c, c_node_idx = C[0]
+        c_node_idx = c_node_idx.reveal()
         print_ln('c_node_idx = %s, dis = %s', 
-                 c_node_idx.reveal(), dist_c.reveal())
+                 c_node_idx, dist_c.reveal())
         C[0] = (MD, 0)
         # if dist_c > -W[0][0]:
         # running.write(running.bit_and( dist_c <= -W[0][0]))
@@ -90,13 +93,13 @@ def search_layer_for_query(q_idx, ep, ef, lc):
         # for index, e_node_idx in enumerate(edge[c_node_idx]):
         @for_range_opt(MMAX0)
         def _(index):
-            e_node_idx = tmp_edge[index]
-            print_ln('index = %s, e_node_idx = %s', index, e_node_idx.reveal())
+            e_node_idx = tmp_edge[index].reveal()
+            print_ln('index = %s, e_node_idx = %s', index, e_node_idx)
             insert_flag = (v[e_node_idx] != q_idx)
             # insert_flag = sint(1)
             print_ln('insert_flag = %s',insert_flag.reveal())
             # if e_node_idx not in v:
-            dist_e = distance_query_to_node(q_idx, ite[e_node_idx])
+            dist_e = distance_query_to_node(q_idx, ite[e_node_idx].reveal())
                 # v.add(e_node_idx)
             v[e_node_idx] = q_idx
                 # if len(W) < ef or dist_e < -W[0][0]:
@@ -141,7 +144,7 @@ def k_nn_search(q_idx, k_param, ef_param):
     W = search_layer_for_query(q_idx, [ep], ef_param, 0)
     # W = [ep]
     print_ln("ep = %s", ep)
-    return [ite[x] for x in W[:k_param:]]
+    return [ite[x.reveal()] for x in W[:k_param:]]
 
 # --- 初始化和主程序 ---
 def init():
@@ -150,9 +153,11 @@ def init():
     node[0] = [2*MAXX] * D
     node_brt[0] = [2*MAXX] * D
     tmp = sint.Array(D)
-    for i in range(1, N + 1):
+    # for i in range(1, N + 1):
+    @for_range_opt(1,N+1)
+    def _(i):
         tmp.input_from(1)
-        node[i] = [*tmp]
+        node[i] = tmp
         node_brt[i] = tmp
     print_ln("----完成读取 node ...")
     # 打印前3个节点以供验证 (这部分代码保持不变)
@@ -173,7 +178,7 @@ def init():
     @for_range_opt(NodeCnt)
     def _(i):
         tmp.input_from(2)
-        edge[i] = [*(tmp.get_vector())]
+        edge[i] = tmp
     print_ln("----完成读取 edge ...")
 
     print_ln("开始读取 ite ...")
@@ -261,7 +266,7 @@ def main():
 
     print_ln("\nHNSW 图读取完成")
  
-    nq = 1
+    nq = 10
     genquerynode(nq)
 
     ave_recall = 0.0

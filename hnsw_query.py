@@ -14,7 +14,7 @@ D = 4
 M = 6
 MMAX0 = 2 * M
 MMAX = M
-N = 1000
+N = 200000
 EF_CONSTRUCTION = 10
 K = 1
 
@@ -206,10 +206,10 @@ def k_nn_search(q_idx, k_param, ef_param):
     
     for lc in range(L, 0, -1):
         # 调用查询专用版本
-        W = search_layer_for_query(q_idx, ep, 1, lc)
-        assert len(W) == 1
-        ep = nxt(W)
-
+        # W = search_layer_for_query(q_idx, ep, 1, lc)
+        # assert len(W) == 1
+        # ep = nxt(W)
+        ep = nxt(ep)
     # 调用查询专用版本
     W = search_layer_for_query(q_idx, ep, ef_param, 0)
     
@@ -305,7 +305,7 @@ def printgraph():
         print("完成写入ite", file = sys.stderr)
 
 def query(printflag = True):
-    nq = 1000
+    nq = 10
     genquerynode(nq)
     global querynode
         
@@ -363,7 +363,7 @@ def query(printflag = True):
 
 def main():
     """主执行函数"""
-    # gendata()
+    gendata()
     init()
     
     print("\n*********************", file=sys.stderr)
@@ -385,9 +385,9 @@ def main():
     print("\nHNSW 图构建完成", file=sys.stderr)
     print(f"建图耗时: {duration_insert:.4f} seconds", file=sys.stderr)
     
-    # printgraph()
+    printgraph()
     # --- 修改开始 (5/6): 将查询点存入新的 querynode 列表 ---
-    query()
+    query(False)
     
 
 if __name__ == "__main__":

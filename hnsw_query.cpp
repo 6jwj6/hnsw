@@ -23,7 +23,7 @@ const int d = 4;
 const int M = 6;
 const int Mmax0 = 2 * M;
 const int Mmax = M;
-const int n = 100;
+const int n = 1000;
 const int efConstruction = 10;
 const int K = 1;
 

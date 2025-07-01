@@ -11,12 +11,12 @@ MINX = -1000
 MAXX = 1000
 
 D = 4  # 向量维度
-M = 5  # 每个节点的最大连接数 (除第0层外)
+M = 6  # 每个节点的最大连接数 (除第0层外)
 MMAX0 = 2 * M  # 第0层的最大连接数
 MMAX = M
-N = 10000 # 数据点数量
-EF_CONSTRUCTION = 5  # 构建索引时的搜索范围大小
-K = 3  # K-NN搜索中的K值
+N = 100000 # 数据点数量
+EF_CONSTRUCTION = 10  # 构建索引时的搜索范围大小
+K = 1  # K-NN搜索中的K值
 # NlgN = N * (int)(math.log2(N))
 # node = [[] for _ in range(N + 1)]
 node = sint.Tensor([N+1,D])
