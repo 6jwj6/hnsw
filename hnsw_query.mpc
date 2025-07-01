@@ -287,7 +287,7 @@ def main():
         # print_ln("查询耗时: %s ms", duration_query_ms)
 
         # 调用查询专用的暴力搜索函数    
-        bruteforce_for_query_sort_oram(q_idx)
+        # bruteforce_for_query_sort_oram(q_idx)
         brt_res = bruteforce_for_query_sort_array(q_idx)
         brt_clr = [x.reveal() for x in brt_res]
         brt_arr = cint.Array(K)

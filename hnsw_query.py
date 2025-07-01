@@ -363,7 +363,7 @@ def query(printflag = True):
 
 def main():
     """主执行函数"""
-    gendata()
+    # gendata()
     init()
     
     print("\n*********************", file=sys.stderr)
@@ -385,9 +385,9 @@ def main():
     print("\nHNSW 图构建完成", file=sys.stderr)
     print(f"建图耗时: {duration_insert:.4f} seconds", file=sys.stderr)
     
-    printgraph()
+    # printgraph()
     # --- 修改开始 (5/6): 将查询点存入新的 querynode 列表 ---
-    query(False)
+    query()
     
 
 if __name__ == "__main__":
