@@ -14,8 +14,8 @@ D = 4
 M = 6
 MMAX0 = 2 * M
 MMAX = M
-N = 100
-EF_CONSTRUCTION = 7
+N = 1000
+EF_CONSTRUCTION = 10
 K = 1
 
 # --- 数据容器分离 ---
@@ -232,7 +232,7 @@ def init():
     print("开始读取数据...", file=sys.stderr)
     node = []
     # 保持 1-based 索引的兼容性，在 node[0] 处插入一个占位符
-    node.append([0] * D) 
+    node.append([2*MAXX] * D) 
     try:
         with open(data_path, "r") as f:
             for i, line in enumerate(f):
@@ -303,6 +303,7 @@ def printgraph():
         line = ' '.join(str(_) for _ in ite)
         f.write(line+'\n')
         print("完成写入ite", file = sys.stderr)
+
 def query(printflag = True):
     nq = 1000
     genquerynode(nq)
