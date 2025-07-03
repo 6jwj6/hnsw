@@ -85,30 +85,31 @@ from Compiler.mpc_math import *
 #     print_ln('%s', i)
 
 
-N = 100000
+N = 100
 # C = LinearORAM(size = N, value_length = 2)
 C = sint.Tensor([N, 2])
-@for_range_opt(N)
-def _(i):
-    C[i] = (i,i)
-start_timer(timer_id=11)
-mx = MemValue(sint(0))
-@for_range_opt(10)
-def _(i):
-    tmp = C[i][0]
-    print_ln('tmp = %s\n', tmp.reveal())
-    mx.write( (mx>tmp).if_else(mx,tmp) ) 
-print_ln('mx = %s\n', mx.reveal())
-stop_timer(timer_id=11)
+print_ln('%s',C.sizes[0])
+# @for_range_opt(N)
+# def _(i):
+#     C[i] = (i,i)
+# start_timer(timer_id=11)
+# mx = MemValue(sint(0))
+# @for_range_opt(10)
+# def _(i):
+#     tmp = C[i][0]
+#     print_ln('tmp = %s\n', tmp.reveal())
+#     mx.write( (mx>tmp).if_else(mx,tmp) ) 
+# print_ln('mx = %s\n', mx.reveal())
+# stop_timer(timer_id=11)
 
-start_timer(22)
-M = 100000
-D = sint.Tensor([M,2])
-@for_range_opt(M)
-def _(i):
-    D[i] = (N-i,i)
-D.sort()
-print_ln('D mx = %s\n', D[M-1].reveal())
+# start_timer(22)
+# M = 100000
+# D = sint.Tensor([M,2])
+# @for_range_opt(M)
+# def _(i):
+#     D[i] = (N-i,i)
+# D.sort()
+# print_ln('D mx = %s\n', D[M-1].reveal())
 
 # stop_timer(22)
 # start_timer(timer_id=11)
