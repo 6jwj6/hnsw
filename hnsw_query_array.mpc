@@ -1,8 +1,8 @@
 from Compiler.library import *
 from Compiler.types import *
 from Compiler.oram import *
-from Programs.Source.HeapQ import MinHeapQ,MaxHeapQ
-import time
+# from Programs.Source.HeapQ import MinHeapQ,MaxHeapQ
+# import time
 from Compiler.mpc_math import *
 # --- 全局常量和变量 ---
 MINX = -100
@@ -54,15 +54,30 @@ def distance_node_to_node(idx1, idx2):
 def nxt(W):
     return [i + 1 for i in W]
 
+# @function_block
+def secure_array_contains(target_array, element_to_find):
+    """
+    安全、高效地判断一个 sint 元素是否存在于 sint.Array 中。
+    :param target_array: sint.Array, 在其中进行搜索的数组
+    # :param element_to_find: sint, 要查找的元素
+    :return: sbool (sint), 如果存在则为1，否则为0
+    """
+    # print_ln("执行安全存在性检查...")
+    # 第1步: 广播要查找的元素
+    broadcasted_element = sint.Array(size = target_array.length)
+    broadcasted_element.assign_all(element_to_find)
+    # 第2步: 向量化比较
+    match_vector = (target_array == broadcasted_element)
+    # 第3步: 求和归约
+    num_matches = match_vector.sum()
+    # 第4步: 判断总和是否大于0
+    result = num_matches > 0
+    return result
+
 def search_layer_for_query(q_idx, ep, ef, lc):
-    v = sint.Array(MaxNodeCnt)
-    # 调用 query-to-node 距离函数
-    # C = [(distance_query_to_node(q_idx, ite[x]), x) for x in ep]
-    # heapq.heapify(C)
-    # W = [(-distance_query_to_node(q_idx, ite[x]), x) for x in ep]
-    # heapq.heapify(W)
-    v[ep[0]] = q_idx
-    v[0] = q_idx
+    # v = sint.Array(MaxNodeCnt)
+    # v[ep[0]] = q_idx
+    # v[0] = q_idx
     MD = 100000000
     MC = ef+ MMAX0
     MW = K + MMAX0
@@ -72,49 +87,38 @@ def search_layer_for_query(q_idx, ep, ef, lc):
     W = sint.Tensor([MW+1, 2])
     W.assign_all(MD)
     W[0] = (distance_query_to_node(q_idx, ite[ep[0]].reveal()), ep[0])
-    # running = MemValue(sint(1))
+
     maxloop = 45
-    # while C:
+    v = sint.Array(maxloop * MMAX0 + 2)
+    v.assign_all(0)
+    v[1] = q_idx
+    ed = MemValue(regint(1))
     @for_range_opt(maxloop)
     def _(loop_t):
         print_ln('--loop_t = %s', loop_t)
         dist_c, c_node_idx = C[0]
         c_node_idx = c_node_idx.reveal()
         print_ln('c_node_idx = %s, dis = %s', 
-                 c_node_idx, dist_c.reveal())
+                    c_node_idx, dist_c.reveal())
         C[0] = (MD, 0)
-        # if dist_c > -W[0][0]:
-        # running.write(running.bit_and( dist_c <= -W[0][0]))
-            # print(f"break rec = {rec}")
-            # '''都是 break 掉的'''
-            # break
+
         tmp_edge = sint.Array(MMAX0)
         tmp_edge.assign_vector(edge[c_node_idx])
-        # for index, e_node_idx in enumerate(edge[c_node_idx]):
         @for_range_opt(MMAX0)
         def _(index):
             e_node_idx = tmp_edge[index].reveal()
             print_ln('index = %s, e_node_idx = %s', index, e_node_idx)
-            insert_flag = (v[e_node_idx] != q_idx)
-            # insert_flag = sint(1)
-            print_ln('insert_flag = %s',insert_flag.reveal())
-            # if e_node_idx not in v:
+            inserted_flag = secure_array_contains(v, e_node_idx)
+            # inserted_flag = sint(0)
+            print_ln('inserted_flag = %s', inserted_flag.reveal())
             dist_e = distance_query_to_node(q_idx, ite[e_node_idx].reveal())
-                # v.add(e_node_idx)
-            v[e_node_idx] = q_idx
-                # if len(W) < ef or dist_e < -W[0][0]:
-            # 为元组的第一个元素选择值
-            tp_0 = insert_flag.if_else(dist_e, MD)
-            # 为元组的第二个元素选择值
-            tp_1 = insert_flag.if_else(e_node_idx, 0)
-            # 将选择出的结果重新组合成元组
+            ed.iadd(1)
+            print_ln('ed = %s', ed)
+            v[ed] = e_node_idx
+            tp_0 = inserted_flag.if_else(MD, dist_e)
+            tp_1 = inserted_flag.if_else(0, e_node_idx)
             tp = (tp_0, tp_1)
-            print_ln('tp = (%s,%s)', tp_0.reveal(), tp_1.reveal())
-            # tp = insert_flag.if_else((dist_e,e_node_idx), (MD,0))
-                    # heapq.heappush(C, (dist_e, e_node_idx))
-                    # heapq.heappush(W, (-dist_e, e_node_idx))
-                    # if len(W) > ef:
-                    #     heapq.heappop(W)
+            print_ln('tp = (%s, %s)', tp_0.reveal(), tp_1.reveal())
             C[MC-index] = tp
             W[MW-index] = tp
         C.sort()
@@ -266,7 +270,7 @@ def main():
 
     print_ln("\nHNSW 图读取完成")
  
-    nq = 10
+    nq = 1
     genquerynode(nq)
 
     ave_recall = 0.0

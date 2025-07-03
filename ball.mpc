@@ -84,13 +84,31 @@ from Compiler.mpc_math import *
 #     print_ln('%s', W[0])
 #     print_ln('%s', i)
 
-C = sint.Tensor([10, 2])
-@for_range_opt(10)
-def _(i):
-    C[i] = (10-i,i)
-C.sort()
-print_ln('%s',C[0][1].reveal())
 
+# N = 100
+# C = LinearORAM(size = N, value_length = 2)
+# @for_range_opt(N)
+# def _(i):
+#     C[i] = (i,i)
+# start_timer(timer_id=11)
+# mx = MemValue(sint(0))
+# @for_range_opt(10)
+# def _(i):
+#     tmp = C[i][0]
+#     print_ln('tmp = %s\n', tmp.reveal())
+#     # mx.write( (mx>tmp).if_else(mx,tmp) ) 
+# print_ln('mx = %s\n', mx.reveal())
+# stop_timer(timer_id=11)
+
+# start_timer(22)
+# M = 1000
+# D = sint.Tensor([M,2])
+# @for_range_opt(M)
+# def _(i):
+#     D[i] = (i,i)
+# D.sort()
+# print_ln('D mx = %s\n', D[M-1].reveal())
+# stop_timer(22)
 # start_timer(timer_id=11)
 # x = OptimalORAM(100)
 # @for_range_opt(100)
@@ -99,3 +117,75 @@ print_ln('%s',C[0][1].reveal())
 # stop_timer(timer_id=11)
 
 # a = sint.Tensor([10,2])
+
+
+# N = 1000
+# v = sint.Array(N)
+# v.assign_all(0)
+# M = 100
+# a = sint.Array(M)
+# @for_range_opt(M)
+# def _(i):
+#     a[i] = random.randint(-3,3)
+# print_ln('%s', a.reveal())
+# ed = MemValue(regint(0))
+# @for_range_opt(M)
+# def _(i):
+#     flag = MemValue(sint(0))
+#     ed = i
+#     @for_range_opt(ed)
+#     def _(j):
+#         print_ln('j = %s', j)
+#         # flag.write(flag + (v[j] == a[i]))
+#     v[i] = flag.if_else(0, a[i])
+#     print_ln('v[%s] = %s', i, v[i].reveal())
+#     print_ln('a[%s] inserted = %s', i, flag.reveal())
+
+# def secure_array_contains(target_array, element_to_find):
+#     """
+#     安全、高效地判断一个 sint 元素是否存在于 sint.Array 中。
+
+#     :param target_array: sint.Array, 在其中进行搜索的数组
+#     :param element_to_find: sint, 要查找的元素
+#     :return: sbool (sint), 如果存在则为1，否则为0
+#     """
+#     print_ln("执行安全存在性检查...")
+    
+#     # 第1步: 广播要查找的元素
+#     broadcasted_element = sint.Array(size=target_array.length)
+#     broadcasted_element.assign_all(element_to_find)
+#     # 第2步: 向量化比较
+#     match_vector = (target_array == broadcasted_element)
+    
+#     # 第3步: 求和归约
+#     num_matches = match_vector.sum()
+    
+#     # 第4步: 判断总和是否大于0
+#     result = num_matches > 0
+    
+#     return result
+
+# # --- 测试 ---
+# # 创建一个测试数组
+# N = 10000
+# my_array = sint.Array(N)
+# @for_range(N)
+# def _(i):
+#     my_array[i] = i * 5 # 数组内容: [0, 5, 10, 15, ..., 45]
+
+# my_arr = my_array.get_sub(0,100)
+# print_ln('%s %s', type(my_arr), len(my_arr))
+
+# # 测试一个存在的元素
+# x1 = sint(20)
+# is_present1 = secure_array_contains(my_array, x1)
+# print_ln("数字 %s 是否在数组中? %s (1=是, 0=否)", x1.reveal(), is_present1.reveal())
+
+# # 测试一个不存在的元素
+# x2 = sint(22)
+# is_present2 = secure_array_contains(my_array, x2)
+# print_ln("数字 %s 是否在数组中? %s (1=是, 0=否)", x2.reveal(), is_present2.reveal())
+
+# c = MemValue(regint(1))
+# c.iadd(2)
+# print_ln('c = %s', c)
