@@ -37,18 +37,11 @@ def distance_query_to_node(q_idx, node_idx):
     """计算一个查询点和一个主数据集节点之间的距离"""
     vec1 = querynode[q_idx]
     vec2 = node[node_idx]
-    res = sint(0)
-    for i in range(D):
-        res = res + (vec1[i]-vec2[i]) * (vec1[i]-vec2[i])
-    return res
-
-def distance_node_to_node(idx1, idx2):
-    """计算主数据集中两个节点之间的距离"""
-    vec1 = node[idx1]
-    vec2 = node[idx2]
-    res = sint(0)
-    for i in range(D):
-        res = res + (vec1[i]-vec2[i]) * (vec1[i]-vec2[i])
+    # res = sint(0)
+    # for i in range(D):
+    #     res = res + (vec1[i]-vec2[i]) * (vec1[i]-vec2[i])
+    delta = vec1 - vec2
+    res = (delta * delta).sum()
     return res
 
 def nxt(W):
@@ -115,8 +108,8 @@ def search_layer_for_query(q_idx, ep, ef, lc):
             W[MW-index] = tp
         C.sort()
         W.sort()
-        tmp_ef = W.get_vector_by_indices(None, 1)[:ef]
-        print_ln('W[:ef] = %s',[x.reveal() for x in tmp_ef])
+        # tmp_ef = W.get_vector_by_indices(None, 1)[:ef]
+        # print_ln('W[:ef] = %s',[x.reveal() for x in tmp_ef])
     # return [item[1] for item in sorted(W, key=lambda x: x[0], reverse=True)]
     return W.get_vector_by_indices(None, 1)[:ef:]
 
@@ -209,9 +202,11 @@ def distance_query_to_node_array(q_idx, node_idx):
     """计算一个查询点和一个主数据集节点之间的距离"""
     vec1 = querynode[q_idx]
     vec2 = node_brt[node_idx]
-    res = sint(0)
-    for i in range(D):
-        res = res + (vec1[i]-vec2[i]) * (vec1[i]-vec2[i])
+    # res = sint(0)
+    # for i in range(D):
+    #     res = res + (vec1[i]-vec2[i]) * (vec1[i]-vec2[i])
+    delta = vec1 - vec2
+    res = (delta * delta).sum()
     return res
 
 @function_block

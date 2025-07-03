@@ -85,29 +85,31 @@ from Compiler.mpc_math import *
 #     print_ln('%s', i)
 
 
-# N = 100
+N = 100000
 # C = LinearORAM(size = N, value_length = 2)
-# @for_range_opt(N)
-# def _(i):
-#     C[i] = (i,i)
-# start_timer(timer_id=11)
-# mx = MemValue(sint(0))
-# @for_range_opt(10)
-# def _(i):
-#     tmp = C[i][0]
-#     print_ln('tmp = %s\n', tmp.reveal())
-#     # mx.write( (mx>tmp).if_else(mx,tmp) ) 
-# print_ln('mx = %s\n', mx.reveal())
-# stop_timer(timer_id=11)
+C = sint.Tensor([N, 2])
+@for_range_opt(N)
+def _(i):
+    C[i] = (i,i)
+start_timer(timer_id=11)
+mx = MemValue(sint(0))
+@for_range_opt(10)
+def _(i):
+    tmp = C[i][0]
+    print_ln('tmp = %s\n', tmp.reveal())
+    mx.write( (mx>tmp).if_else(mx,tmp) ) 
+print_ln('mx = %s\n', mx.reveal())
+stop_timer(timer_id=11)
 
-# start_timer(22)
-# M = 1000
-# D = sint.Tensor([M,2])
-# @for_range_opt(M)
-# def _(i):
-#     D[i] = (i,i)
-# D.sort()
-# print_ln('D mx = %s\n', D[M-1].reveal())
+start_timer(22)
+M = 100000
+D = sint.Tensor([M,2])
+@for_range_opt(M)
+def _(i):
+    D[i] = (N-i,i)
+D.sort()
+print_ln('D mx = %s\n', D[M-1].reveal())
+
 # stop_timer(22)
 # start_timer(timer_id=11)
 # x = OptimalORAM(100)
@@ -192,7 +194,30 @@ from Compiler.mpc_math import *
 # c.iadd(2)
 # print_ln('c = %s', c)
 
-a = MemValue(regint(2))
-b = a.read()
-a.iadd(1)
-print_ln('%s %s', a, b)
+# a = MemValue(regint(2))
+# b = a.read()
+# a.iadd(1)
+# print_ln('%s %s', a, b)
+
+# a = sint.Tensor([10,4])
+# for i in range(10):
+#     a[i] = [random.randint(1,10) for _ in range(4)]
+#     # print_ln('%s', type(a[i]))
+#     print_ln('%s', a[i].reveal())
+# b = sint.Tensor([10,4])
+# for i in range(10):
+#     b[i] = [random.randint(1,10) for _ in range(4)]
+#     # print_ln('%s', type(b[i]))
+#     print_ln('%s', b[i].reveal())
+
+# @for_range_opt(1000)
+# def _(_):
+#     delta = a[1] - b[1]
+#     res = delta * delta
+#     res = res.sum()
+#     # '''上面更快'''
+#     # delta = Array.create_from(a[1] - b[1])
+#     # res = delta.dot(delta)
+#     print_ln('type delta = %s', type(delta))
+#     print_ln('delta = %s', delta.reveal())
+#     print_ln('delta^2 %s', res.reveal())
