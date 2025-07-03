@@ -54,30 +54,22 @@ def distance_node_to_node(idx1, idx2):
 def nxt(W):
     return [i + 1 for i in W]
 
-# @function_block
 def secure_array_contains(target_array, element_to_find):
     """
     安全、高效地判断一个 sint 元素是否存在于 sint.Array 中。
     :param target_array: sint.Array, 在其中进行搜索的数组
-    # :param element_to_find: sint, 要查找的元素
+    :param element_to_find: sint, 要查找的元素
     :return: sbool (sint), 如果存在则为1，否则为0
     """
-    # print_ln("执行安全存在性检查...")
-    # 第1步: 广播要查找的元素
     broadcasted_element = sint.Array(size = target_array.length)
     broadcasted_element.assign_all(element_to_find)
-    # 第2步: 向量化比较
+    # 向量化比较
     match_vector = (target_array == broadcasted_element)
-    # 第3步: 求和归约
     num_matches = match_vector.sum()
-    # 第4步: 判断总和是否大于0
     result = num_matches > 0
     return result
 
 def search_layer_for_query(q_idx, ep, ef, lc):
-    # v = sint.Array(MaxNodeCnt)
-    # v[ep[0]] = q_idx
-    # v[0] = q_idx
     MD = 100000000
     MC = ef+ MMAX0
     MW = K + MMAX0

@@ -167,14 +167,16 @@ from Compiler.mpc_math import *
 
 # # --- 测试 ---
 # # 创建一个测试数组
-# N = 10000
+# N = 10
 # my_array = sint.Array(N)
 # @for_range(N)
 # def _(i):
 #     my_array[i] = i * 5 # 数组内容: [0, 5, 10, 15, ..., 45]
 
-# my_arr = my_array.get_sub(0,100)
+# my_arr = my_array.get_sub(0,5)
 # print_ln('%s %s', type(my_arr), len(my_arr))
+# res = my_array.concat(my_arr)
+# print_ln('%s', res.reveal())
 
 # # 测试一个存在的元素
 # x1 = sint(20)
@@ -189,3 +191,8 @@ from Compiler.mpc_math import *
 # c = MemValue(regint(1))
 # c.iadd(2)
 # print_ln('c = %s', c)
+
+a = MemValue(regint(2))
+b = a.read()
+a.iadd(1)
+print_ln('%s %s', a, b)
