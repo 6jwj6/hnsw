@@ -62,32 +62,6 @@ def secure_array_contains(target_array, element_to_find):
     result = num_matches > 0
     return result
 
-def find_min_in_tensor(tensor):
-    """
-    在线性时间内找到一个 (distance, index) 张量中的最小距离项。
-    返回: (最小距离, 最小项的索引, 最小项在张量中的索引)
-    """
-    # 初始化一个非常大的值作为当前的最小值
-    MD = 100000000
-    min_dist = MemValue(sint(MD)) 
-    min_node_idx = MemValue(sint(0))
-    min_tensor_idx = MemValue(sint(0))
-
-    @for_range(tensor.sizes[0])
-    def _(i):
-        current_dist = tensor[i][0]
-        current_node_idx = tensor[i][1]
-        
-        # 安全地比较当前最小值和当前元素
-        is_smaller = current_dist < min_dist
-        
-        # 使用 if_else 安全地更新最小值
-        min_dist.write(is_smaller.if_else(current_dist, min_dist))
-        min_node_idx.write(is_smaller.if_else(current_node_idx, min_node_idx))
-        min_tensor_idx.write(is_smaller.if_else(i, min_tensor_idx))
-
-    return min_dist.read(), min_node_idx.read(), min_tensor_idx.read()
-
 def search_layer_for_query(q_idx, ep, ef, lc):
     MD = 100000000
     MC = ef+ MMAX0
