@@ -37,15 +37,9 @@ def distance_query_to_node(q_idx, node_idx):
     """计算一个查询点和一个主数据集节点之间的距离"""
     vec1 = querynode[q_idx]
     vec2 = node[node_idx]
-    # res = sint(0)
-    # for i in range(D):
-    #     res = res + (vec1[i]-vec2[i]) * (vec1[i]-vec2[i])
     delta = vec1 - vec2
     res = (delta * delta).sum()
     return res
-
-def nxt(W):
-    return [i + 1 for i in W]
 
 def secure_array_contains(target_array, element_to_find):
     """
@@ -99,10 +93,9 @@ def secure_array_contains(target_array, element_to_find):
 #         tensor[i][1] = is_equal.if_else(0, current_node_idx)
 #     # print_ln('找到了最小值')
 #     return min_node_idx.read()
-'''不如直接排序快'''
+# '''不如直接排序快'''
 
-def search_layer_for_query(q_idx, ep, ef, lc):
-    maxloop = 45
+def search_layer_for_query(q_idx, ep, ef, lc, maxloop):
     MD = 100000000
     MC = ef+ MMAX0
     # MC = maxloop * MMAX0 + 2
@@ -124,15 +117,14 @@ def search_layer_for_query(q_idx, ep, ef, lc):
     def _(loop_t):
         # print_ln('--loop_t = %s', loop_t)
         # c_node_idx = find_min_in_tensor(C)
-        dist_c, c_node_idx = C[0]
+        # dist_c, c_node_idx = C[0]
+        c_node_idx = C[0][1]
         '''只是为了得到c_node_idx'''
         c_node_idx = c_node_idx.reveal()
         # print_ln('c_node_idx = %s, dis = %s', 
                     # c_node_idx, dist_c.reveal())
         C[0] = (MD, 0)
 
-        # tmp_edge = sint.Array(MMAX0)
-        # tmp_edge.assign_vector(edge[c_node_idx])
         tmp_edge = edge[c_node_idx]
         @for_range_opt(MMAX0)
         def _(index):
@@ -157,7 +149,6 @@ def search_layer_for_query(q_idx, ep, ef, lc):
         # W.sort()
         # tmp_ef = W.get_vector_by_indices(None, 1)[:ef]
         # print_ln('W[:ef] = %s',[x.reveal() for x in tmp_ef])
-    # return [item[1] for item in sorted(W, key=lambda x: x[0], reverse=True)]
     W.sort()
     return W.get_vector_by_indices(None, 1)[:ef:]
 
@@ -165,22 +156,19 @@ def k_nn_search(q_idx, k_param, ef_param):
     global EP, L
     W = []
     ep = MemValue(EP)
-    # for lc in range(L, 0, -1):
-    print_ln("ep = %s", ep)
-    # @for_range_opt(L, 0, -1)
-    # def _(lc):
+    # print_ln("ep = %s", ep)
+    @for_range_opt(L, 1, -1)
+    def _(lc):
+        print_ln('lc = %s', lc)
         # 调用查询专用版本
-        # W = search_layer_for_query(q_idx, ep, 1, lc)
-        # assert len(W) == 1
-        # ep = nxt(W)
-        # ep.write(ep + 1)
-        # print_ln("ep = %s", ep)
-        # print_ln("lc = %s", lc)
-    ep.write(ep + L)
+        W = search_layer_for_query(q_idx, [ep], 1, lc, 5)
+        assert len(W) == 1
+        ep.write(W[0].reveal()+1)
+        
+    # ep.write(ep + L)
     # 调用查询专用版本
-    W = search_layer_for_query(q_idx, [ep], ef_param, 0)
-    # W = [ep]
     print_ln("ep = %s", ep)
+    W = search_layer_for_query(q_idx, [ep], ef_param, 0, 20)
     return [ite[x.reveal()] for x in W[:k_param:]]
 
 # --- 初始化和主程序 ---
@@ -190,14 +178,13 @@ def init():
     node[0] = [2*MAXX] * D
     node_brt[0] = [2*MAXX] * D
     tmp = sint.Array(D)
-    # for i in range(1, N + 1):
-    @for_range_opt(1,N+1)
+    @for_range_opt(1, N+1)
     def _(i):
         tmp.input_from(1)
         node[i] = tmp
         node_brt[i] = tmp
     print_ln("----完成读取 node ...")
-    # 打印前3个节点以供验证 (这部分代码保持不变)
+    # 打印前3个节点以供验证 
     if N >= 3:
         for i in range(1, 4):
             print_ln("节点 %s: %s", i, [node[i][j].reveal() for j in range(D)])
@@ -229,29 +216,21 @@ def bruteforce_for_query_sort_oram(q_idx):
     """暴力搜索查询点 q_idx 的 K 个最近邻，用 sort"""
     print_ln("\n暴力搜索结果:")
     start_timer(timer_id = 222)
-    # start_time = time.time()
     sQ = sint.Tensor([N, 2])
-    # for i in range(1, N+1):
     @for_range_opt(1, N+1)
     def _(i):
         dist = distance_query_to_node(q_idx, i)
         sQ[i - 1] = (i, dist)
     sQ.sort(key_indices = [1])
     sQ = sQ.get_vector_by_indices(None, 0)[:K:]
-    # end_time = time.time()
     stop_timer(timer_id = 222)
-    # duration_ms = (end_time - start_time) * 1000
     print_ln('序号: %s', [_.reveal() for _ in sQ])
-    # print_ln("查询耗时: %s ms", duration_ms)
     return sQ
 
 def distance_query_to_node_array(q_idx, node_idx):
     """计算一个查询点和一个主数据集节点之间的距离"""
     vec1 = querynode[q_idx]
     vec2 = node_brt[node_idx]
-    # res = sint(0)
-    # for i in range(D):
-    #     res = res + (vec1[i]-vec2[i]) * (vec1[i]-vec2[i])
     delta = vec1 - vec2
     res = (delta * delta).sum()
     return res
@@ -260,20 +239,15 @@ def bruteforce_for_query_sort_array(q_idx):
     """暴力搜索查询点 q_idx 的 K 个最近邻，用 sort"""
     print_ln("\n暴力搜索结果:")
     start_timer(timer_id = 333)
-    # start_time = time.time()
     sQ = sint.Tensor([N, 2])
-    # for i in range(1, N+1):
     @for_range_opt(1, N+1)
     def _(i):
         dist = distance_query_to_node_array(q_idx, i)
         sQ[i - 1] = (i, dist)
     sQ.sort(key_indices = [1])
     sQ = sQ.get_vector_by_indices(None, 0)[:K:]
-    # end_time = time.time()
     stop_timer(timer_id = 333)
-    # duration_ms = (end_time - start_time) * 1000
     print_ln('序号: %s', [_.reveal() for _ in sQ])
-    # print_ln("查询耗时: %s ms", duration_ms)
     return sQ
 
 def genquerynode(num, dim=D):
@@ -281,8 +255,6 @@ def genquerynode(num, dim=D):
     global querynode
     querynode = sint.Tensor([num+1 , dim])
     for i in range(1,num+1):
-    # @for_range_opt(1,num+1)
-    # def _(i):
         querynode[i] = [random.randint(MINX, MAXX) for _ in range(dim)]
         print_ln('%s', querynode[i].reveal())
     print_ln("完成写入查询数据")
@@ -305,7 +277,7 @@ def main():
 
     print_ln("\nHNSW 图读取完成")
 
-    nq = 3
+    nq = 1
     genquerynode(nq)
 
     ave_recall = 0.0
@@ -346,7 +318,6 @@ def main():
         ave_recall += recall
         print_ln("召回率: %s", recall)
         print_ln("-------------------------------------")
-    # # --- 修改结束 (6/6) ---
         
     print_ln("平均召回率: %s", ave_recall / nq)
     print_ln('-'*50+'END'+'-'*50)

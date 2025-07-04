@@ -85,10 +85,10 @@ from Compiler.mpc_math import *
 #     print_ln('%s', i)
 
 
-N = 100
-# C = LinearORAM(size = N, value_length = 2)
-C = sint.Tensor([N, 2])
-print_ln('%s',C.sizes[0])
+# N = 100
+# # C = LinearORAM(size = N, value_length = 2)
+# C = sint.Tensor([N, 2])
+# print_ln('%s',C.sizes[0])
 # @for_range_opt(N)
 # def _(i):
 #     C[i] = (i,i)
@@ -223,33 +223,41 @@ print_ln('%s',C.sizes[0])
 #     print_ln('delta = %s', delta.reveal())
 #     print_ln('delta^2 %s', res.reveal())
 
-a = sint.Tensor([1000,2])
-@for_range_opt(1000)
-def _(i):
-    a[i] = [random.randint(1,3) for _ in range(2)]
-    # print_ln('%s', type(a[i]))
-    # print_ln('%s', a[i].reveal())
-start_timer(111)
-min_dist = MemValue(sint(1000000)) 
-min_node_idx = MemValue(sint(0))
-@for_range_opt(a.sizes[0])
-def _(i):
-    # curr = a[i][0]
-    # is_equal = curr == 2
-    # a[i][0] = is_equal.if_else(100, curr)
-    current_dist = a[i][0]
-    current_node_idx = a[i][1]
+# a = sint.Tensor([1000,2])
+# @for_range_opt(1000)
+# def _(i):
+#     a[i] = [random.randint(1,3) for _ in range(2)]
+#     # print_ln('%s', type(a[i]))
+#     # print_ln('%s', a[i].reveal())
+# start_timer(111)
+# min_dist = MemValue(sint(1000000)) 
+# min_node_idx = MemValue(sint(0))
+# @for_range_opt(a.sizes[0])
+# def _(i):
+#     # curr = a[i][0]
+#     # is_equal = curr == 2
+#     # a[i][0] = is_equal.if_else(100, curr)
+#     current_dist = a[i][0]
+#     current_node_idx = a[i][1]
     
-    # 安全地比较当前最小值和当前元素
-    is_smaller = current_dist < min_dist
+#     # 安全地比较当前最小值和当前元素
+#     is_smaller = current_dist < min_dist
     
-    # 使用 if_else 安全地更新最小值
-    min_dist.write(is_smaller.if_else(current_dist, min_dist))
-    min_node_idx.write(is_smaller.if_else(current_node_idx, min_node_idx))
-    # print_ln('%s', a[i].reveal())
-stop_timer(111)
+#     # 使用 if_else 安全地更新最小值
+#     min_dist.write(is_smaller.if_else(current_dist, min_dist))
+#     min_node_idx.write(is_smaller.if_else(current_node_idx, min_node_idx))
+#     # print_ln('%s', a[i].reveal())
+# stop_timer(111)
 
-start_timer(222)
-a.sort()
+# start_timer(222)
+# a.sort()
 
-stop_timer(222)
+# stop_timer(222)
+
+# L = cint(10)
+# x = MemValue(L)
+# @for_range_opt(L,1,-1)
+# def _(i):
+#     print_ln('%s', i)
+#     x.write(i)
+# print_ln('%s', x)
