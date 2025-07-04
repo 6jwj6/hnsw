@@ -1,0 +1,25 @@
+import random
+import os
+# Generate n random numbers
+# n = 5#int(input("输入要生成的随机数的个数： "))
+# random_numbers = [[random.randint(-100, 100) for _ in range(4)]  for _ in range(n)]# Generates integers between 0 and 1000
+
+# Define the filename
+# filename0 = "./Player-Data/Input-P0-0"
+# filename1 = "./Player-Data/Input-P1-1"
+# filename2 = "./Player-Data/Input-P2-2"
+
+# Write the random numbers to the file
+script_dir = os.path.dirname(os.path.abspath(__file__))
+filename = os.path.join(script_dir, "hnsw_query.txt")
+n = 100
+D = 4
+try:
+    with open(filename, 'w') as f:
+        for _ in range(n):
+            line = ' '.join(str(random.randint(-100, 100)) for _ in range(D))
+            f.write(line + "\n")
+    print(f"Successfully generated 100 random numbers and saved them to '{filename}'")
+except IOError:
+    print(f"Error: Could not write to file '{filename}'")
+

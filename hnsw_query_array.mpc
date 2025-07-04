@@ -13,7 +13,8 @@ M = 6  # 每个节点的最大连接数 (除第0层外)
 MMAX0 = 2 * M  # 第0层的最大连接数
 MMAX = M
 N = 200000# 数据点数量
-EF_CONSTRUCTION = 10  # 构建索引时的搜索范围大小
+EF_CONSTRUCTION = 10  # 构建索引时的搜索范围大小 构建时用了 10
+'''似乎在搜索中把这个数稍微调小一点不影响召回率'''
 K = 2 # K-NN搜索中的K值
 
 Maxloop = EF_CONSTRUCTION*EF_CONSTRUCTION
@@ -97,7 +98,7 @@ def secure_array_contains(target_array, element_to_find):
 
 def search_layer_for_query(q_idx, ep, ef, lc, maxloop):
     MD = 100000000
-    MC = ef+ MMAX0
+    MC = ef + MMAX0
     # MC = maxloop * MMAX0 + 2
     C = sint.Tensor([MC+1, 2])
     C.assign_all(MD)
@@ -153,23 +154,28 @@ def search_layer_for_query(q_idx, ep, ef, lc, maxloop):
     return W.get_vector_by_indices(None, 1)[:ef:]
 
 def k_nn_search(q_idx, k_param, ef_param):
+    print_ln("\nq 的 K-ANN 搜索结果:")
+    start_timer(timer_id=111)
     global EP, L
     W = []
     ep = MemValue(EP)
     # print_ln("ep = %s", ep)
-    @for_range_opt(L, 1, -1)
-    def _(lc):
-        print_ln('lc = %s', lc)
-        # 调用查询专用版本
-        W = search_layer_for_query(q_idx, [ep], 1, lc, 5)
-        assert len(W) == 1
-        ep.write(W[0].reveal()+1)
-        
-    # ep.write(ep + L)
+    # @for_range_opt(L, 1, -1)
+    # def _(lc):
+    #     # 调用查询专用版本
+    #     W = search_layer_for_query(q_idx, [ep], 1, lc, 5)
+    #     print_ln('lc = %s', lc)
+    #     assert len(W) == 1
+    #     ep.write(W[0].reveal()+1)
+    ep.write(ep + L)
+    '''发现这样召回率还高了'''
     # 调用查询专用版本
-    print_ln("ep = %s", ep)
-    W = search_layer_for_query(q_idx, [ep], ef_param, 0, 20)
-    return [ite[x.reveal()] for x in W[:k_param:]]
+    # print_ln("ep = %s", ep)
+    W = search_layer_for_query(q_idx, [ep], ef_param, 0, 40)
+    print_ln('lc = %s', 0)
+    res = [ite[x.reveal()] for x in W[:k_param:]]
+    stop_timer(timer_id=111)
+    return res
 
 # --- 初始化和主程序 ---
 def init():
@@ -247,17 +253,19 @@ def bruteforce_for_query_sort_array(q_idx):
     sQ.sort(key_indices = [1])
     sQ = sQ.get_vector_by_indices(None, 0)[:K:]
     stop_timer(timer_id = 333)
-    print_ln('序号: %s', [_.reveal() for _ in sQ])
     return sQ
 
-def genquerynode(num, dim=D):
-    print_ln("\n开始生成查询数据...")
+def initquerynode(num, dim = D):
+    print_ln("\n开始读入查询数据...")
     global querynode
-    querynode = sint.Tensor([num+1 , dim])
-    for i in range(1,num+1):
-        querynode[i] = [random.randint(MINX, MAXX) for _ in range(dim)]
-        print_ln('%s', querynode[i].reveal())
-    print_ln("完成写入查询数据")
+    querynode = sint.Tensor([num + 1 , dim])
+    tmp = sint.Array(D)
+    @for_range_opt(1, num + 1)
+    def _(i):
+        tmp.input_from(0)
+        querynode[i] = tmp
+        # print_ln('%s', querynode[i].reveal())
+    print_ln("----完成读入查询数据")
 
 '''-------------------主程序-----------------------------'''
 def main():
@@ -277,50 +285,48 @@ def main():
 
     print_ln("\nHNSW 图读取完成")
 
-    nq = 1
-    genquerynode(nq)
-
-    ave_recall = 0.0
-    for q_idx in range(1, nq+1):
+    nq = 20
+    initquerynode(nq)
+    ave_recall = MemValue(0)
+    # for q_idx in range(1, nq+1):
+    # @for_range_opt(13, 13+1)
+    @for_range_opt(1, nq + 1)
+    def _(q_idx):
         print_ln("\n--------------------------------")
         print_ln("当前查询点 (索引 %s) 为 (%s)", q_idx,
                                     querynode[q_idx].reveal())
         # brt_res = bruteforce_for_query_sort(q_idx)
         # brt_clr = [x.reveal() for x in brt_res]
-        print_ln("\nq 的 K-ANN 搜索结果:")
-        # # 调用查询专用函数 k_nn_search，并传递查询索引
-        start_timer(timer_id=111)
+        
+        # 调用查询专用函数 k_nn_search，并传递查询索引
+        
         knn_res = k_nn_search(q_idx, K, EF_CONSTRUCTION)
-        stop_timer(timer_id=111)
         knn_clr = [x.reveal() for x in knn_res]
         knn_arr = cint.Array(K)
         knn_arr.assign_vector(knn_clr)
-        
         print_ln("序号: %s", knn_clr)
         # for res_idx in knn_res:
         #     dist = distance_query_to_node(q_idx, res_idx)
         #     print_ln("%s || %s", res_idx, dist)
-        # print_ln("查询耗时: %s ms", duration_query_ms)
 
         # 调用查询专用的暴力搜索函数    
-        # bruteforce_for_query_sort_oram(q_idx)
         brt_res = bruteforce_for_query_sort_array(q_idx)
         brt_clr = [x.reveal() for x in brt_res]
         brt_arr = cint.Array(K)
         brt_arr.assign_vector(brt_clr)
-        # brt_set = set(brt_clr)
-        # ccnt = sum(1 for res_idx in knn_clr if res_idx in brt_set)
+        print_ln('序号: %s', brt_clr)
+
         ccnt = MemValue(cint(0))
-        @for_range_opt([K,K])
+        @for_range_opt([K, K])
         def _(i,j):
             ccnt.write(ccnt + (knn_arr[i]==brt_arr[j]).if_else(1, 0))
         recall = ccnt / K
-        ave_recall += recall
+        ave_recall.iadd(ccnt)
         print_ln("召回率: %s", recall)
         print_ln("-------------------------------------")
         
-    print_ln("平均召回率: %s", ave_recall / nq)
+    print_ln("平均召回率: %s",  ave_recall / (nq * K))
     print_ln('-'*50+'END'+'-'*50)
 
-
+# main()
 main()

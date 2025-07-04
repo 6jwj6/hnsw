@@ -33,15 +33,15 @@ ML = 1 / math.log(M)
 
 # --- 辅助函数 ---
 def gendata(num=N, dim=D):
-    """生成随机数据并写入 data.txt"""
+    """生成随机数据并写入 hnsw_node_data.txt"""
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_path = os.path.join(script_dir, "data.txt")
+    output_path = os.path.join(script_dir, "hnsw_node_data.txt")
     print("开始生成数据...", file=sys.stderr)
     with open(output_path, "w") as f:
         for _ in range(num):
             line = ' '.join(str(random.randint(MINX, MAXX)) for _ in range(dim))
             f.write(line + "\n")
-    print("完成写入 data.txt", file=sys.stderr)
+    print("完成写入 hnsw_node_data.txt", file=sys.stderr)
 
 # --- 修改开始 (1/6): 创建两个版本的 distance 函数 ---
 def distance_node_to_node(idx1, idx2):
@@ -206,13 +206,13 @@ def k_nn_search(q_idx, k_param, ef_param):
     
     for lc in range(L, 0, -1):
         # 调用查询专用版本
-        # W = search_layer_for_query(q_idx, ep, 1, lc)
-        # assert len(W) == 1
-        # ep = nxt(W)
-        ep = nxt(ep)
+        W = search_layer_for_query(q_idx, ep, 1, lc)
+        assert len(W) == 1
+        ep = nxt(W)
+        # ep = nxt(ep)
     # 调用查询专用版本
-    W = search_layer_for_query(q_idx, ep, ef_param, 0)
-    
+    # W = search_layer_for_query(q_idx, ep, ef_param, 0)
+    W = search_layer_for_query(q_idx, ep, 6, 0)
     result_heap = []
     for x_node_idx in W:
         dist = distance_query_to_node(q_idx, ite[x_node_idx])
@@ -228,7 +228,7 @@ def init():
     """从文件加载数据"""
     global node
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    data_path = os.path.join(script_dir, "data.txt")
+    data_path = os.path.join(script_dir, "hnsw_node_data.txt")
     print("开始读取数据...", file=sys.stderr)
     node = []
     # 保持 1-based 索引的兼容性，在 node[0] 处插入一个占位符
@@ -239,9 +239,9 @@ def init():
                 if i >= N: break
                 node.append([int(x) for x in line.strip().split()])
     except FileNotFoundError:
-        print(f"错误: 在路径 {data_path} 未找到 data.txt。", file=sys.stderr)
+        print(f"错误: 在路径 {data_path} 未找到 hnsw_node_data.txt。", file=sys.stderr)
         exit(1)
-    print("完成读取 data.txt", file=sys.stderr)
+    print("完成读取 hnsw_node_data.txt", file=sys.stderr)
     if len(node) > 4:
         for i in range(1, 4):
             print(f"节点 {i}: {node[i]}", file=sys.stderr)
@@ -282,9 +282,9 @@ def printgraph():
         for i in range(MMAX0-len(x)):
             x.append(0)
     
-    """把图的信息输出到 graph.txt"""
+    """把图的信息输出到 hnsw_edge_graph.txt"""
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_path = os.path.join(script_dir, "graph.txt")
+    output_path = os.path.join(script_dir, "hnsw_edge_graph.txt")
     print("\n开始输出数据...", file=sys.stderr)
 
     with open(output_path, "w") as f:

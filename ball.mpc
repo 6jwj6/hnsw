@@ -261,3 +261,7 @@ from Compiler.mpc_math import *
 #     print_ln('%s', i)
 #     x.write(i)
 # print_ln('%s', x)
+
+x = regint(10)
+y = regint(3)
+print_ln('%s', x/y)
