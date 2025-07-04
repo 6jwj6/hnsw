@@ -62,18 +62,53 @@ def secure_array_contains(target_array, element_to_find):
     result = num_matches > 0
     return result
 
+# def find_min_in_tensor(tensor):
+#     """
+#     在线性时间内找到一个 (distance, index) 张量中的最小距离项。
+#     返回: 最小项的index
+#     """
+#     # 初始化一个非常大的值作为当前的最小值
+#     MD = 100000000
+#     min_dist = MemValue(sint(MD)) 
+#     min_node_idx = MemValue(sint(0))
+#     # print_ln('找  最小值')
+#     @for_range_opt(tensor.sizes[0])
+#     def _(i):
+
+#         current_dist = tensor[i][0]
+#         current_node_idx = tensor[i][1]
+        
+#         # 安全地比较当前最小值和当前元素
+#         is_smaller = current_dist < min_dist
+        
+#         # 使用 if_else 安全地更新最小值
+#         min_dist.write(is_smaller.if_else(current_dist, min_dist))
+#         min_node_idx.write(is_smaller.if_else(current_node_idx, min_node_idx))
+#         # print_ln('找到  最小值')
+#     '''用过的点赋值为很大的值，相当于去掉这个点'''
+#     @for_range_opt(tensor.sizes[0])
+#     def _(i):
+#         current_dist = tensor[i][0]
+#         current_node_idx = tensor[i][1]
+        
+#         # 安全地比较最小值和当前元素
+#         is_equal = current_dist == min_dist
+        
+#         # 使用 if_else 安全地覆盖最小点
+#         tensor[i][0] = is_equal.if_else(MD, current_dist)
+#         tensor[i][1] = is_equal.if_else(0, current_node_idx)
+#     # print_ln('找到了最小值')
+#     return min_node_idx.read()
+'''不如直接排序快'''
+
 def search_layer_for_query(q_idx, ep, ef, lc):
+    maxloop = 45
     MD = 100000000
     MC = ef+ MMAX0
-    # MW = K + MMAX0
+    # MC = maxloop * MMAX0 + 2
     C = sint.Tensor([MC+1, 2])
     C.assign_all(MD)
     C[0] = (distance_query_to_node(q_idx, ite[ep[0]].reveal()), ep[0])
-    # W = sint.Tensor([MW+1, 2])
-    # W.assign_all(MD)
-    # W[0] = (distance_query_to_node(q_idx, ite[ep[0]].reveal()), ep[0])
-
-    maxloop = 45
     v = sint.Array(maxloop * MMAX0 + 2)
     v.assign_all(0)
     v[1] = q_idx
@@ -87,33 +122,33 @@ def search_layer_for_query(q_idx, ep, ef, lc):
     ed = MemValue(regint(1))
     @for_range_opt(maxloop)
     def _(loop_t):
-        print_ln('--loop_t = %s', loop_t)
-        # dist_c, c_node_idx, tensor_idx_c = find_min_in_tensor(C)
-        # tensor_idx_c = tensor_idx_c.reveal()
+        # print_ln('--loop_t = %s', loop_t)
+        # c_node_idx = find_min_in_tensor(C)
         dist_c, c_node_idx = C[0]
+        '''只是为了得到c_node_idx'''
         c_node_idx = c_node_idx.reveal()
-        print_ln('c_node_idx = %s, dis = %s', 
-                    c_node_idx, dist_c.reveal())
+        # print_ln('c_node_idx = %s, dis = %s', 
+                    # c_node_idx, dist_c.reveal())
         C[0] = (MD, 0)
-        # C[tensor_idx_c] = (MD, 0)
 
-        tmp_edge = sint.Array(MMAX0)
-        tmp_edge.assign_vector(edge[c_node_idx])
+        # tmp_edge = sint.Array(MMAX0)
+        # tmp_edge.assign_vector(edge[c_node_idx])
+        tmp_edge = edge[c_node_idx]
         @for_range_opt(MMAX0)
         def _(index):
             e_node_idx = tmp_edge[index].reveal()
-            print_ln('index = %s, e_node_idx = %s', index, e_node_idx)
+            # print_ln('index = %s, e_node_idx = %s', index, e_node_idx)
             inserted_flag = secure_array_contains(v, e_node_idx)
             # inserted_flag = sint(0)
-            print_ln('inserted_flag = %s', inserted_flag.reveal())
+            # print_ln('inserted_flag = %s', inserted_flag.reveal())
             dist_e = distance_query_to_node(q_idx, ite[e_node_idx].reveal())
-            ed.iadd(1)
-            print_ln('ed = %s', ed)
-            v[ed] = e_node_idx
             tp_0 = inserted_flag.if_else(MD, dist_e)
             tp_1 = inserted_flag.if_else(0, e_node_idx)
             tp = (tp_0, tp_1)
-            print_ln('tp = (%s, %s)', tp_0.reveal(), tp_1.reveal())
+            # print_ln('tp = (%s, %s)', tp_0.reveal(), tp_1.reveal())
+            ed.iadd(1)
+            # print_ln('ed = %s', ed)
+            v[ed] = e_node_idx
             C[MC-index] = tp
             # W[MW-index] = tp
             # C[ed] = tp
@@ -190,7 +225,6 @@ def init():
         ite[i] = sint.get_input_from(2)
     print_ln("----完成读取 ite ...")
     
-@function_block
 def bruteforce_for_query_sort_oram(q_idx):
     """暴力搜索查询点 q_idx 的 K 个最近邻，用 sort"""
     print_ln("\n暴力搜索结果:")
@@ -222,7 +256,6 @@ def distance_query_to_node_array(q_idx, node_idx):
     res = (delta * delta).sum()
     return res
 
-@function_block
 def bruteforce_for_query_sort_array(q_idx):
     """暴力搜索查询点 q_idx 的 K 个最近邻，用 sort"""
     print_ln("\n暴力搜索结果:")
@@ -248,6 +281,8 @@ def genquerynode(num, dim=D):
     global querynode
     querynode = sint.Tensor([num+1 , dim])
     for i in range(1,num+1):
+    # @for_range_opt(1,num+1)
+    # def _(i):
         querynode[i] = [random.randint(MINX, MAXX) for _ in range(dim)]
         print_ln('%s', querynode[i].reveal())
     print_ln("完成写入查询数据")
@@ -269,8 +304,8 @@ def main():
     print_ln("*"*50)
 
     print_ln("\nHNSW 图读取完成")
- 
-    nq = 1
+
+    nq = 3
     genquerynode(nq)
 
     ave_recall = 0.0
