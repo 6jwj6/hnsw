@@ -1,10 +1,9 @@
-
 # hello_world.mpc
 from Compiler.library import *
 from Compiler.compilerLib import Compiler
 from Compiler.types import *
 from Compiler.oram import *
-from Programs.Source.HeapQ import MinHeapQ,MaxHeapQ
+from Programs.Source.HNSW.HeapQ import MinHeapQ,MaxHeapQ
 import time
 from Compiler.mpc_math import *
 # compiler = Compiler()
