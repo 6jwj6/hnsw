@@ -11,10 +11,10 @@ MMAX0 = 2 * M  # 第0层的最大连接数
 MMAX = M
 N = 200000 # 数据点数量
 EF_CONSTRUCTION = 10  # 构建索引时的搜索范围大小 构建时用了 10
-'''似乎在搜索中把这个数稍微调小一点不影响召回率'''
-K = 2 # K-NN搜索中的K值
+'''似乎在搜索中把这个数稍微调小一点不影响召回率，但是对时间影响不大'''
+K = 1 # K-NN搜索中的K值
 MaxNodeCnt = (int)(N*M/(M-1) + 6*math.sqrt(N*M)/(M-1))+5 # 总点数期望值
-Maxloop = EF_CONSTRUCTION*EF_CONSTRUCTION
+
 # 数据和图结构
 node_brt = sint.Tensor([N + 1, D]) # 暴力算法用的原始数据库
 node = sint.Tensor([MaxNodeCnt, D]) # hnsw算法用的有复制的数据库
@@ -61,16 +61,12 @@ def distance_query_to_nodeedge(q_idx, c_node_idx, index):
 def search_layer_for_query(q_idx, ep, ef, lc, maxloop):
     MD = 100000000
     MC = ef + MMAX0
-    # MC = maxloop * MMAX0 + 2
     C = sint.Tensor([MC+1, 2])
     C.assign_all(MD)
     C[0] = (distance_query_to_node(q_idx, ep[0].reveal()), ep[0])
     v = sint.Array(maxloop * MMAX0 + 2)
     v.assign_all(0)
     v[1] = q_idx
-    # C = sint.Tensor([maxloop * MMAX0 + 2, 2])
-    # C.assign_all(MD)
-    # C[1] = (distance_query_to_node(q_idx, ite[ep[0]].reveal()), ep[0])
     W = sint.Tensor([maxloop * MMAX0 + 2, 2])
     W.assign_all(MD)
     W[1] = (distance_query_to_node(q_idx, ep[0].reveal()), ep[0])
@@ -79,11 +75,9 @@ def search_layer_for_query(q_idx, ep, ef, lc, maxloop):
     @for_range_opt(maxloop)
     def _(loop_t):
         # print_ln('--loop_t = %s', loop_t)
-        # c_node_idx = find_min_in_tensor(C)
         # dist_c, c_node_idx = C[0]
         c_node_idx = C[0][1].reveal()
         '''只是为了得到c_node_idx'''
-        # c_node_idx = c_node_idx.reveal()
         # print_ln('c_node_idx = %s, dis = %s', 
                     # c_node_idx, dist_c.reveal())
         C[0] = (MD, 0)
@@ -91,14 +85,9 @@ def search_layer_for_query(q_idx, ep, ef, lc, maxloop):
         tmp_edge = edge[c_node_idx]
         @for_range_opt(MMAX0)
         def _(index):
-            # e_node_idx = tmp_edge[index].reveal()
             e_node_idx = tmp_edge[index]
-            # print_ln('index = %s, e_node_idx = %s', index, e_node_idx)
             inserted_flag = secure_array_contains(v, e_node_idx)
-            # e_node_idx = inserted_flag.if_else(0, e_node_idx).reveal()
-            # inserted_flag = sint(0)
             # print_ln('inserted_flag = %s', inserted_flag.reveal())
-            '''这个distance，用到序号reveal，不用这样；选用点旁边带着d维数据'''
             dist_e = distance_query_to_nodeedge(q_idx, c_node_idx, index)
             tp_0 = inserted_flag.if_else(MD, dist_e)
             tp_1 = inserted_flag.if_else(0, e_node_idx)
@@ -108,11 +97,8 @@ def search_layer_for_query(q_idx, ep, ef, lc, maxloop):
             # print_ln('ed = %s', ed)
             v[ed] = e_node_idx
             C[MC-index] = tp
-            # C[MC-index] = (dist_e, e_node_idx)
-            # W[MW-index] = tp
             # C[ed] = tp
             W[ed] = tp
-            # W[ed] = (dist_e, e_node_idx)
         C.sort()
         # W.sort()
         # tmp_ef = W.get_vector_by_indices(None, 1)[:ef]
@@ -281,18 +267,12 @@ def main():
     nq = 20
     initquerynode(nq)
     ave_recall = MemValue(0)
-    # for q_idx in range(1, nq+1):
-    # @for_range_opt(13, 13+1)
     @for_range_opt(1, nq + 1)
     def _(q_idx):
         print_ln("\n--------------------------------")
         print_ln("当前查询点 (索引 %s) 为 (%s)", q_idx,
-                                    querynode[q_idx].reveal())
-        # brt_res = bruteforce_for_query_sort(q_idx)
-        # brt_clr = [x.reveal() for x in brt_res]
-        
+                                    querynode[q_idx].reveal())        
         # 调用查询专用函数 k_nn_search，并传递查询索引
-        
         knn_res = k_nn_search(q_idx, K, EF_CONSTRUCTION)
         knn_clr = [x.reveal() for x in knn_res]
         knn_arr = cint.Array(K)
@@ -311,7 +291,7 @@ def main():
 
         ccnt = MemValue(cint(0))
         @for_range_opt([K, K])
-        def _(i,j):
+        def _(i, j):
             ccnt.write(ccnt + (knn_arr[i]==brt_arr[j]).if_else(1, 0))
         recall = ccnt / K
         ave_recall.iadd(ccnt)
@@ -321,5 +301,5 @@ def main():
     print_ln("平均召回率: %s",  ave_recall / (nq * K))
     print_ln('-'*50+'END'+'-'*50)
 
-# main()
+#------ 主函数 ------
 main()
