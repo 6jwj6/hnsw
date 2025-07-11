@@ -33,15 +33,15 @@ ML = 1 / math.log(M)
 
 # --- 辅助函数 ---
 def gendata(num=N, dim=D):
-    """生成随机数据并写入 hnsw_node_data.txt"""
+    """生成随机数据并写入 hnsw_no_copied_node.txt"""
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_path = os.path.join(script_dir, "hnsw_node_data.txt")
+    output_path = os.path.join(script_dir, "hnsw_no_copied_node.txt")
     print("开始生成数据...", file=sys.stderr)
     with open(output_path, "w") as f:
         for _ in range(num):
             line = ' '.join(str(random.randint(MINX, MAXX)) for _ in range(dim))
             f.write(line + "\n")
-    print("完成写入 hnsw_node_data.txt", file=sys.stderr)
+    print("完成写入 hnsw_no_copied_node.txt", file=sys.stderr)
 
 # --- 修改开始 (1/6): 创建两个版本的 distance 函数 ---
 def distance_node_to_node(idx1, idx2):
@@ -228,7 +228,7 @@ def init():
     """从文件加载数据"""
     global node
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    data_path = os.path.join(script_dir, "hnsw_node_data.txt")
+    data_path = os.path.join(script_dir, "hnsw_no_copied_node.txt")
     print("开始读取数据...", file=sys.stderr)
     node = []
     # 保持 1-based 索引的兼容性，在 node[0] 处插入一个占位符
@@ -239,9 +239,9 @@ def init():
                 if i >= N: break
                 node.append([int(x) for x in line.strip().split()])
     except FileNotFoundError:
-        print(f"错误: 在路径 {data_path} 未找到 hnsw_node_data.txt。", file=sys.stderr)
+        print(f"错误: 在路径 {data_path} 未找到 hnsw_no_copied_node.txt。", file=sys.stderr)
         exit(1)
-    print("完成读取 hnsw_node_data.txt", file=sys.stderr)
+    print("完成读取 hnsw_no_copied_node.txt", file=sys.stderr)
     if len(node) > 4:
         for i in range(1, 4):
             print(f"节点 {i}: {node[i]}", file=sys.stderr)
@@ -276,6 +276,18 @@ def genquerynode(num, dim=D):
         querynode.append([random.randint(MINX, MAXX) for _ in range(dim)])
     print("完成写入查询数据", file=sys.stderr)
 
+def printcopiednode():
+    """把图的信息输出到 hnsw_copied_node.txt"""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_path = os.path.join(script_dir, "hnsw_copied_node.txt")
+    print("\n开始输出数据...", file=sys.stderr)
+    with open(output_path, "w") as f:
+        '''输出复制后的数据库'''
+        for x in ite:
+            line = ' '.join(str(_) for _ in node[x])
+            f.write(line + '\n')
+        print("完成写入nodecopied", file = sys.stderr)
+
 def printgraph():
     tmp_edge = copy.deepcopy(edge)
     for x in tmp_edge:
@@ -288,10 +300,10 @@ def printgraph():
     print("\n开始输出数据...", file=sys.stderr)
 
     with open(output_path, "w") as f:
-        '''输出EnterPoint, L, 总点数 = len(edge) == len(ite)约等于N*M/(M-1)'''
+        '''输出EnterPoint, L, 总点数 = len(edge) == len(ite) 约等于N*M/(M-1)'''
         line = ' '.join([str(EP), str(L), str(len(tmp_edge))])
         f.write(line+'\n')
-        print("完成写入EP 和 L", file = sys.stderr)
+        print("完成写入EP, L, nodecnt", file = sys.stderr)
 
         '''输出edge'''
         for x in tmp_edge:
@@ -303,6 +315,16 @@ def printgraph():
         line = ' '.join(str(_) for _ in ite)
         f.write(line+'\n')
         print("完成写入ite", file = sys.stderr)
+
+        '''输出node_edge'''
+        for neighbors in tmp_edge:
+            st = []
+            for neighbor in neighbors:
+                st.append(' '.join(str(_) for _ in node[ite[neighbor]]))
+            line = ' '.join(st)
+            f.write(line + '\n')
+        print("完成写入node_edge", file = sys.stderr)
+        
 
 def query(printflag = True):
     nq = 10
@@ -384,7 +406,8 @@ def main():
     duration_insert = end_insert - start_insert
     print("\nHNSW 图构建完成", file=sys.stderr)
     print(f"建图耗时: {duration_insert:.4f} seconds", file=sys.stderr)
-    
+
+    printcopiednode()
     printgraph()
     # --- 修改开始 (5/6): 将查询点存入新的 querynode 列表 ---
     query(False)
