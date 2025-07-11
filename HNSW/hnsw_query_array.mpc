@@ -18,7 +18,7 @@ K = 2 # K-NN搜索中的K值
 Maxloop = EF_CONSTRUCTION*EF_CONSTRUCTION
 # 数据和图结构
 # node =  OptimalORAM(size = N + 1, value_length = D) # 邻接表, edge[0] 作为占位符
-node = sint.Tensor([N+1, D])
+node = sint.Tensor([N + 1, D])
 node_brt = sint.Tensor([N + 1, D])
 querynode = None
 MaxNodeCnt = (int)(N*M/(M-1) + 6*math.sqrt(N*M)/(M-1)) #总点数期望值
@@ -127,23 +127,28 @@ def search_layer_for_query(q_idx, ep, ef, lc, maxloop):
         tmp_edge = edge[c_node_idx]
         @for_range_opt(MMAX0)
         def _(index):
-            e_node_idx = tmp_edge[index].reveal()
+            # e_node_idx = tmp_edge[index].reveal()
+            e_node_idx = tmp_edge[index]
             # print_ln('index = %s, e_node_idx = %s', index, e_node_idx)
             inserted_flag = secure_array_contains(v, e_node_idx)
+            e_node_idx = inserted_flag.if_else(0, e_node_idx).reveal()
             # inserted_flag = sint(0)
             # print_ln('inserted_flag = %s', inserted_flag.reveal())
+            '''这个distance，用到序号reveal，不用这样；选用点旁边带着d维数据'''
             dist_e = distance_query_to_node(q_idx, ite[e_node_idx].reveal())
-            tp_0 = inserted_flag.if_else(MD, dist_e)
-            tp_1 = inserted_flag.if_else(0, e_node_idx)
-            tp = (tp_0, tp_1)
+            # tp_0 = inserted_flag.if_else(MD, dist_e)
+            # tp_1 = inserted_flag.if_else(0, e_node_idx)
+            # tp = (tp_0, tp_1)
             # print_ln('tp = (%s, %s)', tp_0.reveal(), tp_1.reveal())
             ed.iadd(1)
             # print_ln('ed = %s', ed)
             v[ed] = e_node_idx
-            C[MC-index] = tp
+            # C[MC-index] = tp
+            C[MC-index] = (dist_e, e_node_idx)
             # W[MW-index] = tp
             # C[ed] = tp
-            W[ed] = tp
+            # W[ed] = tp
+            W[ed] = (dist_e, e_node_idx)
         C.sort()
         # W.sort()
         # tmp_ef = W.get_vector_by_indices(None, 1)[:ef]
