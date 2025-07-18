@@ -14,7 +14,7 @@ D = 4
 M = 6
 MMAX0 = 2 * M
 MMAX = M
-N = 200000
+N = 10000
 EF_CONSTRUCTION = 10
 K = 1
 

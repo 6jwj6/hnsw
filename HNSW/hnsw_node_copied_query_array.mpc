@@ -9,7 +9,7 @@ D = 4  # 向量维度
 M = 6  # 每个节点的最大连接数 (除第0层外)
 MMAX0 = 2 * M  # 第0层的最大连接数
 MMAX = M
-N = 200000 # 数据点数量
+N = 10000 # 数据点数量
 EF_CONSTRUCTION = 10  # 构建索引时的搜索范围大小 构建时用了 10
 '''似乎在搜索中把这个数稍微调小一点不影响召回率，但是对时间影响不大'''
 K = 1 # K-NN搜索中的K值
@@ -19,8 +19,8 @@ MaxNodeCnt = (int)(N*M/(M-1) + 6*math.sqrt(N*M)/(M-1))+5 # 总点数期望值
 node_brt = sint.Tensor([N + 1, D]) # 暴力算法用的原始数据库
 node = sint.Tensor([MaxNodeCnt, D]) # hnsw算法用的有复制的数据库
 querynode = None
-nodeedge = sint.Tensor([MaxNodeCnt, MMAX0, D]) #相邻点对应的d维数据
-edge = sint.Tensor([MaxNodeCnt, MMAX0])
+nodeedge = sint.Tensor([MaxNodeCnt, MMAX0, D]) # 相邻点对应的d维数据
+edge = sint.Tensor([MaxNodeCnt, MMAX0]) # 相邻点的id
 ite = sint.Array(MaxNodeCnt)
 # HNSW 算法状态
 L = None  # 当前最高层数
