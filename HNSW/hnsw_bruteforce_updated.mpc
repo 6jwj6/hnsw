@@ -73,6 +73,7 @@ def initquerynode(num, dim = D):
     print_ln("----完成读入查询数据")
 
 def bruteforce_for_query_sort(q_idx):
+    ''' 可以改变计算距离的方式，得到更快的方法'''
     """暴力搜索查询点 q_idx 的 K 个最近邻，用 sort"""
     start_timer(timer_id = 333)
     sQ = sint.Tensor([N, 2])
