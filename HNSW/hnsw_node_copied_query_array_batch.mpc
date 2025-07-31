@@ -201,20 +201,20 @@ def init():
     #             print_ln("节点 %s: %s", i, [nodeedge[i][j][k].reveal() for k in range(D)])
 
     
-def bruteforce_for_query_sort_oram(q_idx):
-    """暴力搜索查询点 q_idx 的 K 个最近邻，用 sort"""
-    print_ln("\n暴力搜索结果:")
-    start_timer(timer_id = 222)
-    sQ = sint.Tensor([N, 2])
-    @for_range_opt(1, N+1)
-    def _(i):
-        dist = distance_query_to_node(q_idx, i)
-        sQ[i - 1] = (i, dist)
-    sQ.sort(key_indices = [1])
-    sQ = sQ.get_vector_by_indices(None, 0)[:K:]
-    stop_timer(timer_id = 222)
-    print_ln('序号: %s', [_.reveal() for _ in sQ])
-    return sQ
+# def bruteforce_for_query_sort_oram(q_idx):
+#     """暴力搜索查询点 q_idx 的 K 个最近邻，用 sort"""
+#     print_ln("\n暴力搜索结果:")
+#     start_timer(timer_id = 222)
+#     sQ = sint.Tensor([N, 2])
+#     @for_range_opt(1, N+1)
+#     def _(i):
+#         dist = distance_query_to_node(q_idx, i)
+#         sQ[i - 1] = (i, dist)
+#     sQ.sort(key_indices = [1])
+#     sQ = sQ.get_vector_by_indices(None, 0)[:K:]
+#     stop_timer(timer_id = 222)
+#     print_ln('序号: %s', [_.reveal() for _ in sQ])
+#     return sQ
 
 def distance_query_to_node_array(q_idx, node_idx):
     """计算一个查询点和一个主数据集节点之间的距离"""
@@ -236,6 +236,28 @@ def bruteforce_for_query_sort_array(q_idx):
     sQ.sort(key_indices = [1])
     sQ = sQ.get_vector_by_indices(None, 0)[:K:]
     stop_timer(timer_id = 333)
+    return sQ
+
+def bruteforce_for_query_sort_array_updated(q_idx):
+    print_ln("\n优化的暴力搜索结果:")
+    start_timer(666)
+    s = sint.Array(N+1)
+    s.assign_all(0)
+    tmp = sint.Array(N+1)
+    @for_range_opt(D)
+    def _(i):
+        tmp.assign_all(querynode[q_idx][i])
+        v = node_brt.get_vector_by_indices(None, i) - tmp
+        v = v * v
+        s.assign(s + v)
+    s = s.to_column_matrix()
+    x = sint.Tensor([N+1,1])
+    x.assign(regint.inc(size = N+1))
+    sQ = x.concat_columns(s)
+    # print_ln('%s', type(sQ))
+    sQ.sort(key_indices=[1])
+    sQ = sQ.get_vector_by_indices(None, 0)[:K:]
+    stop_timer(666)
     return sQ
 
 def initquerynode(num, dim = D):
@@ -292,6 +314,10 @@ def main():
         brt_arr.assign_vector(brt_clr)
         print_ln('序号: %s', brt_clr)
 
+        brt_res1 = bruteforce_for_query_sort_array_updated(q_idx)
+        brt_clr1 = [x.reveal() for x in brt_res1]
+        print_ln('序号: %s', brt_clr1)
+
         ccnt = MemValue(cint(0))
         @for_range_opt([K, K])
         def _(i, j):
@@ -303,6 +329,11 @@ def main():
         
     print_ln("平均召回率: %s",  ave_recall / (nq * K))
     print_ln('-'*50+'END'+'-'*50)
-
+    print_ln('**************************************')
+    print_ln('***** timer 111 是 HNSW 的结果    *****')
+    print_ln('***** timer 333 是 暴搜  的结果    *****')
+    print_ln('***** timer 666 是 优化暴搜 的结果  *****')
+    print_ln('**************************************')
+    
 #------ 主函数 ------
 main()

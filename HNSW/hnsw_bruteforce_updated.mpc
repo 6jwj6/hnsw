@@ -14,7 +14,7 @@ D = 4  # 向量维度
 M = 6  # 每个节点的最大连接数 (除第0层外)
 MMAX0 = 2 * M  # 第0层的最大连接数
 MMAX = M
-N = 10000 # 数据点数量
+N = 100000 # 数据点数量
 EF_CONSTRUCTION = 10  # 构建索引时的搜索范围大小
 K = 1  # K-NN搜索中的K值
 # NlgN = N * (int)(math.log2(N))
@@ -88,6 +88,28 @@ def bruteforce_for_query_sort(q_idx):
     print_ln('序号: %s', [_.reveal() for _ in sQ])
     return sQ
 
+def bruteforce_for_query_sort_updated(q_idx):
+    start_timer(666)
+    s = sint.Array(N+1)
+    s.assign_all(0)
+    tmp = sint.Array(N+1)
+    @for_range_opt(D)
+    def _(i):
+        tmp.assign_all(querynode[q_idx][i])
+        v = node.get_vector_by_indices(None, i) - tmp
+        v = v * v
+        s.assign(s + v)
+    s = s.to_column_matrix()
+    x = sint.Tensor([N+1,1])
+    x.assign(regint.inc(size = N+1))
+    sQ = x.concat_columns(s)
+    # print_ln('%s', type(sQ))
+    sQ.sort(key_indices=[1])
+    sQ = sQ.get_vector_by_indices(None, 0)[:K:]
+    stop_timer(666)
+    print_ln("\n暴力搜索结果:")
+    print_ln('序号: %s', [_.reveal() for _ in sQ])
+    return sQ
 '''-------------------主程序-----------------------------'''
 print_ln('-'*50+'RESULT'+'-'*50)
 print_ln()
@@ -109,5 +131,6 @@ def _(q_idx):
     print_ln("\n"+'-'*100)
     print_ln("当前查询点 (索引 %s) 为 (%s)", q_idx, querynode[q_idx].reveal())
     bruteforce_for_query_sort(q_idx)
+    bruteforce_for_query_sort_updated(q_idx)
    
 print_ln('-'*50+'END'+'-'*50)

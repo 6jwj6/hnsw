@@ -323,34 +323,50 @@ from Compiler.mpc_math import *
 #         print_ln('%s', a[j].reveal())
 #     print_ln()
 
-a = sint.Array(10000)
-a[0] = 100
-a[1] = 1
-a[2] = 10
-a[3] = 100
-hd = sint(100)
-# b = sint.Array(10000)
-aa = a.get_vector()
-print_ln('%s', type(a))
-print_ln('%s', type(aa))
-b = sint.Array(10000)
+# N = 100000
+# a = sint.Array(N)
+# a[0] = 100
+# a[1] = 1
+# a[2] = 10
+# a[3] = 100
+# hd = sint(100)
+# # b = sint.Array(10000)
+# aa = a.get_vector()
+# print_ln('%s', type(a))
+# print_ln('%s', type(aa))
 
-b.assign_all(5)
-x = a == hd
-print_ln('%s', type(x))
-print_ln('%s', [_.reveal() for _ in x[:10]])
+# x = a == hd
+# print_ln('%s', type(x))
+# print_ln('%s', [_.reveal() for _ in x[:10]])
 
-start_timer(666)
-c = a - b
-c = c * c
-stop_timer(666)
-print_ln('(a - b)^2 = %s', [_.reveal() for _ in c[:10]])
+# start_timer(666)
+# b = sint.Array(N)
+# b.assign_all(5)
+# c = a - b
+# c = c * c
+# stop_timer(666)
+# print_ln('(a - b)^2 = %s', [_.reveal() for _ in c[:10]])
 
-start_timer(777)
-@for_range_opt(10000)
-def _(i):
-    # x = a[i] == hd
-    a[i] = a[i] - 5
-    a[i] = a[i] * a[i]
-stop_timer(777)
-print_ln('(a - b)^2 = %s', [_.reveal() for _ in c[:10]])
+# start_timer(777)
+# @for_range_opt(N)
+# def _(i):
+#     # x = a[i] == hd
+#     a[i] = a[i] - 5
+#     a[i] = a[i] * a[i]
+# stop_timer(777)
+# print_ln('(a - b)^2 = %s', [_.reveal() for _ in c[:10]])
+
+N = 100000
+vv = sint.Tensor([N])
+print_ln('%s', type(vv))
+# print_ln('%s', vv.reveal())
+ff = vv.to_column_matrix()
+print_ln('%s', type(ff))
+print_ln('%s', type(vv))
+x = sint.Tensor([N,1])
+x.assign(regint.inc(N, 1))
+
+# print_ln('%s', x.reveal())
+
+res = ff.concat_columns(x)
+print_ln('%s', res.reveal())
