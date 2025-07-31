@@ -93,45 +93,43 @@ def search_layer_for_query(q_indexes, ep, ef, lc, maxloop, batch_size = 1):
         dis = distance_query_to_node(q_idx, ep[0].reveal())
         C[0][1+i] = dis
         W[1][1+i]= dis
-    used = sint.Array(maxloop * batch_size + 2)
-    used.assign(0)
-
-    used_cnt = MemValue(regint(1))
+    used = sint.Array(batch_size)
     ed = MemValue(regint(1))
-    @for_range_opt([maxloop, batch_size])
-    def _(loop_t, i):
-        C.sort(key_indices=1+i)
-        used_flag = secure_array_contains(used, C[0][0])
-        c_node_idx = used_flag.if_else(0, C[0][0])
-        used_cnt.iadd(1)
-        use[used_cnt] = c_node_idx
-        c_node_idx = c_node_idx.reveal()
-        '''只是为了得到c_node_idx'''
-        # print_ln('c_node_idx = %s, dis = %s', 
-                    # c_node_idx, dist_c.reveal())
-        C[0].assign_all(MD)
-        C[0][0] = 0
-        tmp_edge = edge[c_node_idx]
-        @for_range_opt(MMAX0)
-        def _(index):
-            e_node_idx = tmp_edge[index]
-            inserted_flag = secure_array_contains(v, e_node_idx)
-            # print_ln('inserted_flag = %s', inserted_flag.reveal())
-            dist_e = distance_query_to_nodeedge(q_idx, c_node_idx, index)
-            tp_0 = inserted_flag.if_else(MD, dist_e)
-            tp_1 = inserted_flag.if_else(0, e_node_idx)
-            tp = (tp_0, tp_1)
-            # print_ln('tp = (%s, %s)', tp_0.reveal(), tp_1.reveal())
-            ed.iadd(1)
-            # print_ln('ed = %s', ed)
-            v[ed] = e_node_idx
-            C[MC-index] = tp
-            # C[ed] = tp
-            W[ed] = tp
-        C.sort()
-        # W.sort()
-        # tmp_ef = W.get_vector_by_indices(None, 1)[:ef]
-        # print_ln('W[:ef] = %s',[x.reveal() for x in tmp_ef])
+    @for_range_opt(maxloop)
+    def _(loop_t):
+        used.assign_all(0)
+        @for_range_opt(batch_size)
+        def _(i):
+            C.sort(key_indices=1+i)
+            used_flag = secure_array_contains(used, C[0][0])
+            used[i] = C[0][0]
+            c_node_idx = used_flag.if_else(0, C[0][0]).reveal()
+            '''只是为了得到c_node_idx'''
+            # print_ln('c_node_idx = %s, dis = %s', 
+                        # c_node_idx, dist_c.reveal())
+            C[0].assign_all(MD)
+            C[0][0] = 0
+            tmp_edge = edge[c_node_idx]
+            @for_range_opt(MMAX0)
+            def _(index):
+                e_node_idx = tmp_edge[index]
+                inserted_flag = secure_array_contains(v, e_node_idx)
+                # print_ln('inserted_flag = %s', inserted_flag.reveal())
+                dist_e = distance_query_to_nodeedge(q_idx, c_node_idx, index)
+                tp_0 = inserted_flag.if_else(MD, dist_e)
+                tp_1 = inserted_flag.if_else(0, e_node_idx)
+                tp = (tp_0, tp_1)
+                # print_ln('tp = (%s, %s)', tp_0.reveal(), tp_1.reveal())
+                ed.iadd(1)
+                # print_ln('ed = %s', ed)
+                v[ed] = e_node_idx
+                C[MC-index] = tp
+                # C[ed] = tp
+                W[ed] = tp
+            C.sort()
+            # W.sort()
+            # tmp_ef = W.get_vector_by_indices(None, 1)[:ef]
+            # print_ln('W[:ef] = %s',[x.reveal() for x in tmp_ef])
     W.sort()
     return W.get_vector_by_indices(None, 1)[:ef:]
 
