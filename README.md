@@ -6,7 +6,7 @@ Scripts/compile-run.py ring HNSW/<文件名>.mpc
 比如：  
 Scripts/compile-run.py ring HNSW/ball.mpc  
 输入输出文件：  
-Input-p0-0 存
+Input-p0-0 存  
 hnsw_query.txt 为查询数据  
 Input-p1-0 存  
 hnsw_no_copied_node.txt 和 hnsw_copied_node.txt，分别为复制后的数据库，和原始未复制的数据库  
