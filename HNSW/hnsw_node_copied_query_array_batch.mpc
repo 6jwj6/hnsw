@@ -62,7 +62,7 @@ def distance_query_to_nodeedge(q_idx, c_node_idx, index):
     res = (delta * delta).sum()
     return res
 
-def search_layer_for_query(q_idx, ep, ef, lc, maxloop):
+def search_layer_for_query(q_idx, ep, ef, lc, maxloop, batch_size = 1):
     MD = 100000000
     MC = ef + MMAX0
     C = sint.Tensor([MC+1, 2])
