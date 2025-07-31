@@ -75,35 +75,33 @@ def distance_query_to_nodeedge(q_idx, c_node_idx, index):
 
 def search_layer_for_query(q_indexes, ep, ef, lc, maxloop, batch_size = 1):
     MD = Inf
-    MC = (ef + MMAX0) * batch_size
+    # MC = (ef + MMAX0) * batch_size
+    MC = ef * batch_size + MMAX0
     C = sint.Tensor([MC+1, 1 + batch_size])
     C.assign_all(MD)
+    @for_range_opt(MC+1)
+    def _(i):
+        C[i][0] = 0
     v = sint.Array(maxloop * MMAX0 * batch_size + 2)
     v.assign_all(0)
-    
-    W = sint.Tensor([maxloop * MMAX0 * batch_size + 2, 2])
+    W = sint.Tensor([maxloop * MMAX0 * batch_size + 2, 1 + batch_size])
     W.assign_all(MD)
-    C[0][0] = ep[0]
-    W[1][0] = ep[0]
-    v[1] = ep[0]
+    v[1] = W[1][0] = C[0][0] = ep[0]
 
     @for_range_opt(batch_size)
     def _(i):
         q_idx = q_indexes[i]
         dis = distance_query_to_node(q_idx, ep[0].reveal())
-        C[0][1+i] = dis
-        W[1][1+i]= dis
-    used = sint.Array(batch_size)
+        W[1][1+i] = C[0][1+i] = dis
+    
     ed = MemValue(regint(1))
     @for_range_opt(maxloop)
     def _(loop_t):
-        used.assign_all(0)
         @for_range_opt(batch_size)
         def _(i):
-            C.sort(key_indices=1+i)
-            used_flag = secure_array_contains(used, C[0][0])
-            used[i] = C[0][0]
-            c_node_idx = used_flag.if_else(0, C[0][0]).reveal()
+            C.sort(key_indices=[1+i])
+            '''可能为 0 需要处理'''
+            c_node_idx = C[0][0].reveal()
             '''只是为了得到c_node_idx'''
             # print_ln('c_node_idx = %s, dis = %s', 
                         # c_node_idx, dist_c.reveal())
@@ -114,26 +112,30 @@ def search_layer_for_query(q_indexes, ep, ef, lc, maxloop, batch_size = 1):
             def _(index):
                 e_node_idx = tmp_edge[index]
                 inserted_flag = secure_array_contains(v, e_node_idx)
-                # print_ln('inserted_flag = %s', inserted_flag.reveal())
-                dist_e = distance_query_to_nodeedge(q_idx, c_node_idx, index)
-                tp_0 = inserted_flag.if_else(MD, dist_e)
-                tp_1 = inserted_flag.if_else(0, e_node_idx)
-                tp = (tp_0, tp_1)
-                # print_ln('tp = (%s, %s)', tp_0.reveal(), tp_1.reveal())
                 ed.iadd(1)
-                # print_ln('ed = %s', ed)
                 v[ed] = e_node_idx
-                C[MC-index] = tp
-                # C[ed] = tp
-                W[ed] = tp
-            C.sort()
-            # W.sort()
+                W[ed][0] = C[MC - index][0] = inserted_flag.if_else(0, e_node_idx)
+                @for_range_opt(batch_size)
+                def _(j):
+                    q_idx = q_indexes[j]
+                    print_ln('qidx = %s', q_idx)
+                    # print_ln('inserted_flag = %s', inserted_flag.reveal())
+                    dist_e = distance_query_to_nodeedge(q_idx, c_node_idx, index) 
+                    # print_ln('ed = %s', ed)
+                    tp = inserted_flag.if_else(MD, dist_e)
+                    W[ed][1+j] = C[MC-index][1+j] = tp
             # tmp_ef = W.get_vector_by_indices(None, 1)[:ef]
             # print_ln('W[:ef] = %s',[x.reveal() for x in tmp_ef])
-    W.sort()
-    return W.get_vector_by_indices(None, 1)[:ef:]
+    print_ln('type of W is : %s', type(W))
+    # print_ln('W is : %s', W.reveal())
+    W.sort(key_indices=[1])
+    print_ln('%s', ite[3246].reveal())
+    print_ln('W is : %s', W.reveal())
+    return W.get_vector_by_indices(None, 0)[:ef:]
 
-def k_nn_search(q_indexes, k_param, ef_param):
+def k_nn_search(q_indexes, k_param, ef_param, batch_size = 1):
+    q_indexes = cint.Array(batch_size)
+    q_indexes.assign(q_indexes)
     print_ln("\nq 的 K-ANN 搜索结果:")
     start_timer(timer_id=111)
     global EP, L
@@ -259,6 +261,8 @@ def bruteforce_for_query_sort_array(q_idx):
     sQ.sort(key_indices = [1])
     sQ = sQ.get_vector_by_indices(None, 0)[:K:]
     stop_timer(timer_id = 333)
+    print_ln('%s', distance_query_to_node_array(q_idx, 7822).reveal())
+    print_ln('%s', distance_query_to_node_array(q_idx, 2693).reveal())
     return sQ
 
 def bruteforce_for_query_sort_array_updated(q_idx):
@@ -315,13 +319,13 @@ def main():
 
     initquerynode(nq)
     ave_recall = MemValue(0)
-    @for_range_opt(1, nq + 1)
+    @for_range_opt(1, 1 + 1)
     def _(q_idx):
         print_ln("\n--------------------------------")
         print_ln("当前查询点 (索引 %s) 为 (%s)", q_idx,
                                     querynode[q_idx].reveal())        
         # 调用查询专用函数 k_nn_search，并传递查询索引
-        knn_res = k_nn_search(q_idx, K, EF_CONSTRUCTION)
+        knn_res = k_nn_search([q_idx], K, EF_CONSTRUCTION, 1)
         knn_clr = [x.reveal() for x in knn_res]
         knn_arr = cint.Array(K)
         knn_arr.assign_vector(knn_clr)

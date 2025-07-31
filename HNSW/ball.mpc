@@ -305,23 +305,23 @@ from Compiler.mpc_math import *
 #     print_ln('type of y : %s', type(y))
 #     print_ln('%s', x[i][1].reveal())
 # stop_timer(12)
-# a = sint.Tensor([10000, 3])
-# @for_range_opt(10000)
-# def _(i):
-#     a[i][0] = randint(0,10)
-#     a[i][1] = randint(0,10)
-#     a[i][2] = randint(0,10)
+a = sint.Tensor([10, 3])
+@for_range_opt(10)
+def _(i):
+    a[i][0] = randint(0,10)
+    a[i][1] = randint(0,10)
+    a[i][2] = randint(0,10)
 # @for_range_opt(10)
 # def _(i):
 #     print_ln('%s', a[i].reveal())
 # print_ln()
-# @for_range_opt(3)
-# def _(i):
-#     a.sort(key_indices=i)
-#     @for_range_opt(10)
-#     def _(j):
-#         print_ln('%s', a[j].reveal())
-#     print_ln()
+@for_range_opt(3)
+def _(i):
+    a.sort(key_indices=i)
+    @for_range_opt(10)
+    def _(j):
+        print_ln('%s', a[j].reveal())
+    print_ln()
 
 # N = 100000
 # a = sint.Array(N)
@@ -405,26 +405,30 @@ from Compiler.mpc_math import *
 # print_ln('x\' = %s', x.reveal())
 
 N = 5
-vv = sint.Tensor([N])
-vv[0] = 5
-vv[1] = 4
-vv[2] = 9
-vv[3] = 7
-print_ln('%s', type(vv))
+# vv = sint.Tensor([N])
+# vv[0] = 5
+# vv[1] = 4
+# vv[2] = 9
+# vv[3] = 7
+# print_ln('%s', type(vv))
 # print_ln('%s', vv.reveal())
-ff = vv.to_column_matrix()
-print_ln('%s', type(ff))
-print_ln('%s', type(vv))
+# ff = vv.to_column_matrix()
+# print_ln('%s', type(ff))
+# print_ln('%s', type(vv))
 x = sint.Tensor([N,1])
-x.assign(regint.inc(N, 1))
-xx = ff.concat_columns(x)
-a = sint.Tensor([2,5,2])
-a[0].assign(xx)
-a[0].sort()
-print_ln('%s', type(a[0]))
-print_ln('%s', a[0].reveal())
+# x.assign(regint.inc(N, 1))
+# xx = ff.concat_columns(x)
+# a = sint.Tensor([2,5,2])
+# a[0].assign(xx)
+# a[0].sort()
+# print_ln('%s', type(a[0]))
+# print_ln('%s', a[0].reveal())
 
 y = sint.Tensor([4,10])
-print_ln('%s', type(y[0]))
-y[0].assign_all(10)
-print_ln('%s', y[0].reveal())
+# print_ln('%s', type(y[0]))
+# y[0].assign_all(10)
+# print_ln('%s', y[0].reveal())
+
+z = sint.Tensor([10,2])
+x[1][0] = y[1][0] = z[1][0] = 100
+print_ln('%s %s %s', x.reveal(), y.reveal(), z.reveal())
