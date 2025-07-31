@@ -370,19 +370,61 @@ from Compiler.mpc_math import *
 
 # res = ff.concat_columns(x)
 # print_ln('%s', res.reveal())
+# Inf = 100000000
+# def secure_unique(target_array:Array):
+#     target_array.sort()
+#     le = len(target_array)
+#     rshifted = sint.Array(1)
+#     rshifted = rshifted.concat(target_array.get_sub(0, le-1))
+#     match_vec = target_array == rshifted
+#     target_array.assign(target_array + match_vec * Inf)
+#     target_array.sort()
+#     return target_array
 
-N = 10
-ns = sint.Array(N)
-# ns.assign((1,1,1,2,2,2,3,3,4,5))
-ns.assign((1,1,2,2,1,3,2,4,5,3))
-ns.sort()
-print_ln('%s', ns.reveal())
-nss = sint.Array(1)
-nss = nss.concat(ns.get_sub(0,N-1))
-print_ln('%s', type(nss))
-print_ln('%s', nss.reveal())
-equ = ns == nss
-print_ln('%s', equ.reveal())
-ns.assign( ns + equ * 1000000)
-ns.sort()
-print_ln('%s', ns.reveal())
+# N = 10
+# ns = sint.Array(N)
+# # ns.assign((1,1,1,2,2,2,3,3,4,5))
+# ns.assign((1,1,2,2,1,3,2,4,5,3))
+
+# x = sint.Array(N)
+# x.assign(ns)
+# ns.sort()
+# print_ln('%s', ns.reveal())
+# nss = sint.Array(1)
+# nss = nss.concat(ns.get_sub(0,N-1))
+# print_ln('%s', type(nss))
+# print_ln('%s', nss.reveal())
+# equ = ns == nss
+# print_ln('%s', equ.reveal())
+# ns.assign( ns + equ * 1000000)
+# ns.sort()
+# print_ln('%s', ns.reveal())
+
+# print_ln('x = %s', x.reveal())
+# x = secure_unique(x)
+# print_ln('x\' = %s', x.reveal())
+
+N = 5
+vv = sint.Tensor([N])
+vv[0] = 5
+vv[1] = 4
+vv[2] = 9
+vv[3] = 7
+print_ln('%s', type(vv))
+# print_ln('%s', vv.reveal())
+ff = vv.to_column_matrix()
+print_ln('%s', type(ff))
+print_ln('%s', type(vv))
+x = sint.Tensor([N,1])
+x.assign(regint.inc(N, 1))
+xx = ff.concat_columns(x)
+a = sint.Tensor([2,5,2])
+a[0].assign(xx)
+a[0].sort()
+print_ln('%s', type(a[0]))
+print_ln('%s', a[0].reveal())
+
+y = sint.Tensor([4,10])
+print_ln('%s', type(y[0]))
+y[0].assign_all(10)
+print_ln('%s', y[0].reveal())

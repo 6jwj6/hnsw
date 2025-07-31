@@ -3,6 +3,7 @@ from Compiler.types import *
 from Compiler.oram import *
 from Compiler.mpc_math import *
 # --- 全局常量和变量 ---
+Inf = 100000000
 MINX = -100
 MAXX = 100
 D = 4  # 向量维度
@@ -55,6 +56,16 @@ def secure_array_contains(target_array, element_to_find):
     result = num_matches > 0
     return result
 
+def secure_unique(target_array:Array):
+    target_array.sort()
+    le = len(target_array)
+    rshifted = sint.Array(1)
+    rshifted = rshifted.concat(target_array.get_sub(0, le-1))
+    match_vec = target_array == rshifted
+    target_array.assign(target_array + match_vec * Inf)
+    target_array.sort()
+    return target_array
+
 def distance_query_to_nodeedge(q_idx, c_node_idx, index):
     vec1 = querynode[q_idx]
     vec2 = nodeedge[c_node_idx][index]
@@ -62,30 +73,44 @@ def distance_query_to_nodeedge(q_idx, c_node_idx, index):
     res = (delta * delta).sum()
     return res
 
-def search_layer_for_query(q_idx, ep, ef, lc, maxloop, batch_size = 1):
-    MD = 100000000
-    MC = ef + MMAX0
-    C = sint.Tensor([MC+1, 2])
+def search_layer_for_query(q_indexes, ep, ef, lc, maxloop, batch_size = 1):
+    MD = Inf
+    MC = (ef + MMAX0) * batch_size
+    C = sint.Tensor([MC+1, 1 + batch_size])
     C.assign_all(MD)
-    C[0] = (distance_query_to_node(q_idx, ep[0].reveal()), ep[0])
-    v = sint.Array(maxloop * MMAX0 + 2)
+    v = sint.Array(maxloop * MMAX0 * batch_size + 2)
     v.assign_all(0)
-    v[1] = q_idx
-    W = sint.Tensor([maxloop * MMAX0 + 2, 2])
+    
+    W = sint.Tensor([maxloop * MMAX0 * batch_size + 2, 2])
     W.assign_all(MD)
-    W[1] = (distance_query_to_node(q_idx, ep[0].reveal()), ep[0])
+    C[0][0] = ep[0]
+    W[1][0] = ep[0]
+    v[1] = ep[0]
 
+    @for_range_opt(batch_size)
+    def _(i):
+        q_idx = q_indexes[i]
+        dis = distance_query_to_node(q_idx, ep[0].reveal())
+        C[0][1+i] = dis
+        W[1][1+i]= dis
+    used = sint.Array(maxloop * batch_size + 2)
+    used.assign(0)
+
+    used_cnt = MemValue(regint(1))
     ed = MemValue(regint(1))
-    @for_range_opt(maxloop)
-    def _(loop_t):
-        # print_ln('--loop_t = %s', loop_t)
-        # dist_c, c_node_idx = C[0]
-        c_node_idx = C[0][1].reveal()
+    @for_range_opt([maxloop, batch_size])
+    def _(loop_t, i):
+        C.sort(key_indices=1+i)
+        used_flag = secure_array_contains(used, C[0][0])
+        c_node_idx = used_flag.if_else(0, C[0][0])
+        used_cnt.iadd(1)
+        use[used_cnt] = c_node_idx
+        c_node_idx = c_node_idx.reveal()
         '''只是为了得到c_node_idx'''
         # print_ln('c_node_idx = %s, dis = %s', 
                     # c_node_idx, dist_c.reveal())
-        C[0] = (MD, 0)
-
+        C[0].assign_all(MD)
+        C[0][0] = 0
         tmp_edge = edge[c_node_idx]
         @for_range_opt(MMAX0)
         def _(index):
@@ -110,7 +135,7 @@ def search_layer_for_query(q_idx, ep, ef, lc, maxloop, batch_size = 1):
     W.sort()
     return W.get_vector_by_indices(None, 1)[:ef:]
 
-def k_nn_search(q_idx, k_param, ef_param):
+def k_nn_search(q_indexes, k_param, ef_param):
     print_ln("\nq 的 K-ANN 搜索结果:")
     start_timer(timer_id=111)
     global EP, L
@@ -128,7 +153,7 @@ def k_nn_search(q_idx, k_param, ef_param):
     '''发现这样召回率还高了'''
     # 调用查询专用版本
     # print_ln("ep = %s", ep)
-    W = search_layer_for_query(q_idx, [ep], ef_param, 0, 40)
+    W = search_layer_for_query(q_indexes, [ep], ef_param, 0, 40, 1)
     print_ln('lc = %s', 0)
     res = [ite[x.reveal()] for x in W[:k_param:]]
     stop_timer(timer_id=111)

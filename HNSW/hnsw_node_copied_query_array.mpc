@@ -66,7 +66,7 @@ def search_layer_for_query(q_idx, ep, ef, lc, maxloop):
     C[0] = (distance_query_to_node(q_idx, ep[0].reveal()), ep[0])
     v = sint.Array(maxloop * MMAX0 + 2)
     v.assign_all(0)
-    v[1] = q_idx
+    v[1] = ep[0]
     W = sint.Tensor([maxloop * MMAX0 + 2, 2])
     W.assign_all(MD)
     W[1] = (distance_query_to_node(q_idx, ep[0].reveal()), ep[0])
