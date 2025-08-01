@@ -315,13 +315,13 @@ def _(i):
 # def _(i):
 #     print_ln('%s', a[i].reveal())
 # print_ln()
-@for_range_opt(3)
-def _(i):
-    a.sort(key_indices=i)
-    @for_range_opt(10)
-    def _(j):
-        print_ln('%s', a[j].reveal())
-    print_ln()
+# @for_range_opt(3)
+# def _(i):
+#     a.sort(key_indices=[i])
+#     @for_range_opt(10)
+#     def _(j):
+#         print_ln('%s', a[j].reveal())
+#     print_ln()
 
 # N = 100000
 # a = sint.Array(N)
@@ -415,7 +415,7 @@ N = 5
 # ff = vv.to_column_matrix()
 # print_ln('%s', type(ff))
 # print_ln('%s', type(vv))
-x = sint.Tensor([N,1])
+# x = sint.Tensor([N,1])
 # x.assign(regint.inc(N, 1))
 # xx = ff.concat_columns(x)
 # a = sint.Tensor([2,5,2])
@@ -424,11 +424,32 @@ x = sint.Tensor([N,1])
 # print_ln('%s', type(a[0]))
 # print_ln('%s', a[0].reveal())
 
-y = sint.Tensor([4,10])
+# y = sint.Tensor([4,10])
 # print_ln('%s', type(y[0]))
 # y[0].assign_all(10)
 # print_ln('%s', y[0].reveal())
 
-z = sint.Tensor([10,2])
-x[1][0] = y[1][0] = z[1][0] = 100
-print_ln('%s %s %s', x.reveal(), y.reveal(), z.reveal())
+# z = sint.Tensor([10,2])
+# x[1][0] = y[1][0] = z[1][0] = 100
+# print_ln('%s %s %s', x.reveal(), y.reveal(), z.reveal())
+
+# x = []
+# x.append([1,2])
+# x.append([34,5])
+# print_ln('%s', x)
+
+# y = [3,54,3,5,5,3,2]
+# print_ln('%s', y[:3])
+
+# z = regint.Array(10).assign(y)
+# # z = Array.create_from(y)
+# print_ln('len = %s', len(z))
+# zz = z.get_vector()[:]
+# print_ln('%s', len(zz))
+# print_ln('%s', zz)
+
+@for_range_opt(0,21,3)
+def _(i):
+    print_ln('%s', i)
+
+print_ln('%s', 20//3)

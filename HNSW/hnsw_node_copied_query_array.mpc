@@ -9,7 +9,7 @@ D = 4  # 向量维度
 M = 6  # 每个节点的最大连接数 (除第0层外)
 MMAX0 = 2 * M  # 第0层的最大连接数
 MMAX = M
-N = 10000 # 数据点数量
+N = 200000 # 数据点数量
 EF_CONSTRUCTION = 10  # 构建索引时的搜索范围大小 构建时用了 10
 '''似乎在搜索中把这个数稍微调小一点不影响召回率，但是对时间影响不大'''
 K = 1 # K-NN搜索中的K值
@@ -70,7 +70,8 @@ def search_layer_for_query(q_idx, ep, ef, lc, maxloop):
     W = sint.Tensor([maxloop * MMAX0 + 2, 2])
     W.assign_all(MD)
     W[1] = (distance_query_to_node(q_idx, ep[0].reveal()), ep[0])
-
+    print_ln('qidx = %s', q_idx)
+    print_ln('ep = %s, dis = %s', ep[0].reveal(), W[1].reveal())
     ed = MemValue(regint(1))
     @for_range_opt(maxloop)
     def _(loop_t):
@@ -234,6 +235,28 @@ def bruteforce_for_query_sort_array(q_idx):
     stop_timer(timer_id = 333)
     return sQ
 
+def bruteforce_for_query_sort_array_updated(q_idx):
+    print_ln("\n优化的暴力搜索结果:")
+    start_timer(666)
+    s = sint.Array(N+1)
+    s.assign_all(0)
+    tmp = sint.Array(N+1)
+    @for_range_opt(D)
+    def _(i):
+        tmp.assign_all(querynode[q_idx][i])
+        v = node_brt.get_vector_by_indices(None, i) - tmp
+        v = v * v
+        s.assign(s + v)
+    s = s.to_column_matrix()
+    x = sint.Tensor([N+1,1])
+    x.assign(regint.inc(size = N+1))
+    sQ = x.concat_columns(s)
+    # print_ln('%s', type(sQ))
+    sQ.sort(key_indices=[1])
+    sQ = sQ.get_vector_by_indices(None, 0)[:K:]
+    stop_timer(666)
+    return sQ
+
 def initquerynode(num, dim = D):
     print_ln("\n开始读入查询数据...")
     global querynode
@@ -283,7 +306,7 @@ def main():
         #     print_ln("%s || %s", res_idx, dist)
 
         # 调用查询专用的暴力搜索函数    
-        brt_res = bruteforce_for_query_sort_array(q_idx)
+        brt_res = bruteforce_for_query_sort_array_updated(q_idx)
         brt_clr = [x.reveal() for x in brt_res]
         brt_arr = cint.Array(K)
         brt_arr.assign_vector(brt_clr)
