@@ -121,8 +121,7 @@ def k_nn_search(q_idx, k_param, ef_param):
     #     print_ln('lc = %s', lc)
     #     assert len(W) == 1
     #     ep.write(W[0].reveal()+1)
-    ep.write(ep + L) 
-    #111
+    ep.write(ep + L)
     '''发现这样召回率还高了'''
     # 调用查询专用版本
     # print_ln("ep = %s", ep)
@@ -288,7 +287,7 @@ def main():
 
     print_ln("\nHNSW 图读取完成")
 
-    nq = 2
+    nq = 20
     initquerynode(nq)
     ave_recall = MemValue(0)
     @for_range_opt(1, nq + 1)
@@ -298,28 +297,28 @@ def main():
                                     querynode[q_idx].reveal())        
         # 调用查询专用函数 k_nn_search，并传递查询索引
         knn_res = k_nn_search(q_idx, K, EF_CONSTRUCTION)
-        # knn_clr = [x.reveal() for x in knn_res]
-        # knn_arr = cint.Array(K)
-        # knn_arr.assign_vector(knn_clr)
-        # print_ln("序号: %s", knn_clr)
+        knn_clr = [x.reveal() for x in knn_res]
+        knn_arr = cint.Array(K)
+        knn_arr.assign_vector(knn_clr)
+        print_ln("序号: %s", knn_clr)
         # for res_idx in knn_res:
         #     dist = distance_query_to_node(q_idx, res_idx)
         #     print_ln("%s || %s", res_idx, dist)
 
         # 调用查询专用的暴力搜索函数    
         brt_res = bruteforce_for_query_sort_array_updated(q_idx)
-        # brt_clr = [x.reveal() for x in brt_res]
-        # brt_arr = cint.Array(K)
-        # brt_arr.assign_vector(brt_clr)
-        # print_ln('序号: %s', brt_clr)
+        brt_clr = [x.reveal() for x in brt_res]
+        brt_arr = cint.Array(K)
+        brt_arr.assign_vector(brt_clr)
+        print_ln('序号: %s', brt_clr)
 
-        # ccnt = MemValue(cint(0))
-        # @for_range_opt([K, K])
-        # def _(i, j):
-        #     ccnt.write(ccnt + (knn_arr[i]==brt_arr[j]).if_else(1, 0))
-        # recall = ccnt / K
-        # ave_recall.iadd(ccnt)
-        # print_ln("召回率: %s", recall)
+        ccnt = MemValue(cint(0))
+        @for_range_opt([K, K])
+        def _(i, j):
+            ccnt.write(ccnt + (knn_arr[i]==brt_arr[j]).if_else(1, 0))
+        recall = ccnt / K
+        ave_recall.iadd(ccnt)
+        print_ln("召回率: %s", recall)
         print_ln("-------------------------------------")
         
     print_ln("平均召回率: %s",  ave_recall / (nq * K))

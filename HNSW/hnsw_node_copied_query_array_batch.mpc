@@ -10,7 +10,7 @@ D = 4  # 向量维度
 M = 6  # 每个节点的最大连接数 (除第0层外)
 MMAX0 = 2 * M  # 第0层的最大连接数
 MMAX = M
-N = 10000 # 数据点数量
+N = 200000 # 数据点数量
 EF_CONSTRUCTION = 10  # 构建索引时的搜索范围大小 构建时用了 10
 '''似乎在搜索中把这个数稍微调小一点不影响召回率，但是对时间影响不大'''
 K = 1 # K-NN搜索中的K值
@@ -30,7 +30,6 @@ EP = None # 入口点 (entry point) 的索引
 NodeCnt = cint(0)
 ML = 1 / math.log(M)
 
-nq = 2
 
 def distance_query_to_node(q_idx, node_idx):
     """计算一个查询点和一个主数据集节点之间的距离"""
@@ -350,16 +349,19 @@ def main():
 
     print_ln("\nHNSW 图读取完成")
 
+    nq = 20
+    batch = 20
     initquerynode(nq)
     ave_recall = MemValue(0)
-    batch = 1
 
     @for_range_opt(1, nq//batch * batch + 1, batch)
     def _(q_idx):
         q_indexes = regint.inc(batch, q_idx)
-        # print_ln('q_indexes = %s', q_indexes.get_vector()[:])
+        print_ln('q_indexes = %s', q_indexes.get_vector()[:])
         print_ln("\n--------------------------------")
-        print_ln('当前查询点 (索引 %s - %s) ', q_idx, q_idx + batch - 1)    
+        print_ln('当前查询点 (索引 %s - %s) 为（%s）', q_idx, q_idx + batch - 1
+                                                , querynode[q_idx].reveal())    
+        '''很怪，这里reveal一下querynode，就可以正确计时，不然第一个计时是错的'''
         # 调用查询专用函数 k_nn_search，并传递查询索引
         knn_res = k_nn_search(q_indexes, K, EF_CONSTRUCTION)
         knn_clr = knn_res.reveal()
