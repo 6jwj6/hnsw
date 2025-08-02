@@ -10,7 +10,7 @@ D = 4  # 向量维度
 M = 6  # 每个节点的最大连接数 (除第0层外)
 MMAX0 = 2 * M  # 第0层的最大连接数
 MMAX = M
-N = 200000 # 数据点数量
+N = 10000 # 数据点数量
 EF_CONSTRUCTION = 10  # 构建索引时的搜索范围大小 构建时用了 10
 '''似乎在搜索中把这个数稍微调小一点不影响召回率，但是对时间影响不大'''
 K = 1 # K-NN搜索中的K值
@@ -46,24 +46,24 @@ def secure_array_contains(target_array, element_to_find):
     :param element_to_find: sint, 要查找的元素
     :return: sbool (sint), 如果存在则为1，否则为0
     """
-    broadcasted_element = sint.Array(size = target_array.length)
-    broadcasted_element.assign_all(element_to_find)
-    # 向量化比较
-    match_vector = (target_array == broadcasted_element)
-    # match_vector = (target_array == element_to_find)
+    # broadcasted_element = sint.Array(size = target_array.length)
+    # broadcasted_element.assign_all(element_to_find)
+    # # 向量化比较
+    # match_vector = (target_array == broadcasted_element)
+    match_vector = (target_array == element_to_find)
     num_matches = match_vector.sum()
     result = num_matches > 0
     return result
 
-def secure_unique(target_array:Array):
-    target_array.sort()
-    le = len(target_array)
-    rshifted = sint.Array(1)
-    rshifted = rshifted.concat(target_array.get_sub(0, le-1))
-    match_vec = target_array == rshifted
-    target_array.assign(target_array + match_vec * Inf)
-    target_array.sort()
-    return target_array
+# def secure_unique(target_array:Array):
+#     target_array.sort()
+#     le = len(target_array)
+#     rshifted = sint.Array(1)
+#     rshifted = rshifted.concat(target_array.get_sub(0, le-1))
+#     match_vec = target_array == rshifted
+#     target_array.assign(target_array + match_vec * Inf)
+#     target_array.sort()
+#     return target_array
 
 def distance_query_to_nodeedge(q_idx, c_node_idx, index):
     vec1 = querynode[q_idx]
@@ -126,12 +126,9 @@ def search_layer_for_query(q_indexes:Array, ep, ef, lc, maxloop, batch_size = 1)
                     # print_ln('inserted_flag = %s', inserted_flag.reveal())
                     dist_e = distance_query_to_nodeedge(q_idx, c_node_idx, index)
                     # print_ln('bat = %s, dise = %s', j, dist_e.reveal())
-                    tp = inserted_flag.if_else(MD, dist_e)
-                    W[ed][1+j] = C[MC-index][1+j] = tp
-            # tmp_ef = W.get_vector_by_indices(None, 1)[:ef]
-            # print_ln('W[:ef] = %s',[x.reveal() for x in tmp_ef])
-    # print_ln('type of W is : %s', type(W))
-    # print_ln('W is : %s', W.reveal())
+                    # tp = inserted_flag.if_else(MD, dist_e)
+                    W[ed][1+j] = C[MC-index][1+j] = inserted_flag.if_else(MD, dist_e)  # tp
+          
     res = sint.Tensor([batch_size, ef])
     @for_range_opt(batch_size)
     def _(i):
@@ -139,8 +136,6 @@ def search_layer_for_query(q_indexes:Array, ep, ef, lc, maxloop, batch_size = 1)
         # print_ln('W is : %s\n', W.reveal())
         res[i].assign(W.get_vector_by_indices(None, 0)[:ef:])
     return res
-    # W.sort(key_indices=[2])
-    # return W.get_vector_by_indices(None, 0)[:ef:]
 
 def k_nn_search(q_indexes, k_param, ef_param, batch_size = 1):
     # print_ln('qindexes = %s, type is %s', q_indexes, type(q_indexes))
@@ -174,9 +169,7 @@ def k_nn_search(q_indexes, k_param, ef_param, batch_size = 1):
         WW = W[i][:k_param:]
         res[i].assign([ite[x.reveal()] for x in WW])
     stop_timer(timer_id=111)
-    # print_ln('res = %s', res.reveal())
     return res
-    # return [ite[x.reveal()] for x in W[0][:k_param:]]
 
 # --- 初始化和主程序 ---
 def init():
@@ -264,8 +257,6 @@ def bruteforce_for_query_sort_array(q_idx):
     sQ.sort(key_indices = [1])
     sQ = sQ.get_vector_by_indices(None, 0)[:K:]
     stop_timer(timer_id = 333)
-    print_ln('dis = %s', distance_query_to_node_array(q_idx, 7822).reveal())
-    # print_ln('%s', distance_query_to_node_array(q_idx, 2693).reveal())
     return sQ
 
 def bruteforce_for_query_sort_array_updated(q_idx):
@@ -284,7 +275,6 @@ def bruteforce_for_query_sort_array_updated(q_idx):
     x = sint.Tensor([N+1,1])
     x.assign(regint.inc(size = N+1))
     sQ = x.concat_columns(s)
-    # print_ln('%s', type(sQ))
     sQ.sort(key_indices=[1])
     sQ = sQ.get_vector_by_indices(None, 0)[:K:]
     stop_timer(666)
@@ -315,7 +305,6 @@ def bruteforce_for_query_sort_array_batch(q_indexes, batch_size = 1):
         sQ.sort(key_indices=[1])
         res[i].assign(sQ.get_vector_by_indices(None, 0)[:K:])
     stop_timer(666)
-    # print_ln('res = %s', res.reveal())
     return res
 
 
@@ -349,8 +338,8 @@ def main():
 
     print_ln("\nHNSW 图读取完成")
 
-    nq = 20
-    batch = 20
+    nq = 3
+    batch = 1
     initquerynode(nq)
     ave_recall = MemValue(0)
 

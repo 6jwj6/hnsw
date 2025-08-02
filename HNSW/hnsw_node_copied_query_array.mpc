@@ -43,10 +43,11 @@ def secure_array_contains(target_array, element_to_find):
     :param element_to_find: sint, 要查找的元素
     :return: sbool (sint), 如果存在则为1，否则为0
     """
-    broadcasted_element = sint.Array(size = target_array.length)
-    broadcasted_element.assign_all(element_to_find)
-    # 向量化比较
-    match_vector = (target_array == broadcasted_element)
+    # broadcasted_element = sint.Array(size = target_array.length)
+    # broadcasted_element.assign_all(element_to_find)
+    # # 向量化比较
+    # match_vector = (target_array == broadcasted_element)
+    match_vector = (target_array == element_to_find)
     num_matches = match_vector.sum()
     result = num_matches > 0
     return result
@@ -60,7 +61,8 @@ def distance_query_to_nodeedge(q_idx, c_node_idx, index):
 
 def search_layer_for_query(q_idx, ep, ef, lc, maxloop):
     MD = 100000000
-    MC = ef + MMAX0
+    # MC = ef + MMAX0
+    MC = maxloop * MMAX0
     C = sint.Tensor([MC+1, 2])
     C.assign_all(MD)
     C[0] = (distance_query_to_node(q_idx, ep[0].reveal()), ep[0])
@@ -197,8 +199,7 @@ def init():
     #     for i in range(1, 4):
     #         for j in range(3):
     #             print_ln("节点 %s: %s", i, [nodeedge[i][j][k].reveal() for k in range(D)])
-
-    
+ 
 def bruteforce_for_query_sort_oram(q_idx):
     """暴力搜索查询点 q_idx 的 K 个最近邻，用 sort"""
     print_ln("\n暴力搜索结果:")
@@ -288,7 +289,7 @@ def main():
 
     print_ln("\nHNSW 图读取完成")
 
-    nq = 2
+    nq = 3
     initquerynode(nq)
     ave_recall = MemValue(0)
     @for_range_opt(1, nq + 1)
