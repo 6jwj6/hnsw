@@ -80,7 +80,7 @@ def search_layer_for_query(q_indexes:Array, ep, ef, lc, maxloop, batch_size = 1)
     MC = maxloop * MMAX0 * batch_size
     C = sint.Tensor([MC+1, 1 + batch_size])
     C.assign_all(MD)
-    @for_range_opt(MC+1)
+    @for_range_opt(MC+1) 
     def _(i):
         C[i][0] = 0
     v = sint.Array(maxloop * MMAX0 * batch_size + 2)
