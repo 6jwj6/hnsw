@@ -448,8 +448,21 @@ N = 5
 # print_ln('%s', len(zz))
 # print_ln('%s', zz)
 
-@for_range_opt(0,21,3)
-def _(i):
-    print_ln('%s', i)
+# @for_range_opt(0,21,3)
+# def _(i):
+#     print_ln('%s', i)
 
-print_ln('%s', 20//3)
+# print_ln('%s', 20//3)
+
+
+a = sint.Tensor([100, 3, 3])
+a.assign(regint.inc(900))
+print_ln('%s', a.reveal())
+start_timer(66)
+@for_range_opt(100)
+def _(i):   
+    a.secure_shuffle()
+    # print_ln('%s', a.reveal())
+    print_ln('%s', sint.get_random().reveal())
+print_ln('%s', a.reveal())
+stop_timer(66)
