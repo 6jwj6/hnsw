@@ -305,12 +305,12 @@ from Compiler.mpc_math import *
 #     print_ln('type of y : %s', type(y))
 #     print_ln('%s', x[i][1].reveal())
 # stop_timer(12)
-a = sint.Tensor([10, 3])
-@for_range_opt(10)
-def _(i):
-    a[i][0] = randint(0,10)
-    a[i][1] = randint(0,10)
-    a[i][2] = randint(0,10)
+# a = sint.Tensor([10, 3])
+# @for_range_opt(10)
+# def _(i):
+#     a[i][0] = randint(0,10)
+#     a[i][1] = randint(0,10)
+#     a[i][2] = randint(0,10)
 # @for_range_opt(10)
 # def _(i):
 #     print_ln('%s', a[i].reveal())
@@ -455,14 +455,61 @@ N = 5
 # print_ln('%s', 20//3)
 
 
-a = sint.Tensor([100, 3, 3])
-a.assign(regint.inc(900))
-print_ln('%s', a.reveal())
-start_timer(66)
-@for_range_opt(100)
-def _(i):   
-    a.secure_shuffle()
-    # print_ln('%s', a.reveal())
-    print_ln('%s', sint.get_random().reveal())
-print_ln('%s', a.reveal())
-stop_timer(66)
+# a = sint.Tensor([100, 3, 3])
+# a.assign(regint.inc(900))
+# x = sint((1,2,3))
+# a.assign_vector_by_indices(x, 0, 1, None)
+# print_ln('\n a = %s', a.reveal())
+# ve = a.get_vector()
+# print_ln('\nve = %s', ve.reveal())
+# a.secure_shuffle()
+
+# print_ln('\na[*][0][0] = %s', a.get_vector_by_indices(None, 0, 0).reveal())
+
+# x1 = a[0].get_vector()
+xx = sint.Array(1)
+t = sint.Array(1)
+print_ln('xx = %s', xx.reveal())
+@for_range_opt(10)
+def _(i):
+    t[0] = i
+    xx = xx.concat(t)
+    print_ln('%s', xx.reveal())
+# le = cint(100)
+# x2 = regint.inc(le)
+# print_ln('x1 = %s', x1.reveal())
+# print_ln('x2 = %s', x2.reveal())
+# res = x1 == x2
+# res = x1 * (1-res)
+# print_ln('res = %s', res.reveal())
+
+# w = sint.Tensor([100, 10])
+# w.assign_all(1)
+# print_ln('%s %s ', type(w[0][1:]), w[0][1:].reveal())
+# vw = w.get_vector_by_indices(None, 0)
+# print_ln('%s %s', type(vw), vw.reveal())
+
+# b[0][0][0] = 10
+# print_ln('%s', b.reveal())
+# print_ln('%s', a.reveal())
+# start_timer(66)
+# @for_range_opt(100)
+# def _(i):   
+#     a.secure_shuffle()
+#     # print_ln('%s', a.reveal())
+#     print_ln('%s', sint.get_random().reveal())
+# print_ln('%s', a.reveal())
+# stop_timer(66)
+
+# a = sint.Array(10)
+# a.assign_all(1)
+# print_ln('%s', a.reveal())
+# x = (4,5,3)
+# a[1:4] = x
+# print_ln('%s', a.reveal())
+
+# b = sint.Array(5)
+# b.assign_all(2)
+
+# a[2:8] = b
+# print_ln('%s', a.reveal())
