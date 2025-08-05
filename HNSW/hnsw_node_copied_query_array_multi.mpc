@@ -59,30 +59,37 @@ def distance_query_to_nodeedge(q_idx, c_node_idx, index):
     res = (delta * delta).sum()
     return res
 
-
+def distance_query_to_tmpnodeedge(q_idx, index):
+    vec1 = querynode[q_idx]
+    vec2 = tmp_nodeedge[index]
+    delta = vec1 - vec2
+    res = (delta * delta).sum()
+    return res
 
 MAXLOOP = 40
 MULTITASKS = 10
 STASH_SIZE = 1 + MAXLOOP * MULTITASKS
 stash_idx = sint.Array(STASH_SIZE)
-stash_edge = sint.Tensor([STASH_SIZE, MMAX0 * D])
+stash_edge_nodeedge = sint.Tensor([STASH_SIZE, MMAX0 + MMAX0 * D])
 stash_idx_shuffled = sint.Array(STASH_SIZE)
-stash_edge_shuffled = sint.Tensor([STASH_SIZE, MMAX0 * D])
+stash_edge_nodeedge_shuffled = sint.Tensor([STASH_SIZE, MMAX0 + MMAX0 * D])
 sta_cnt = regint(0)
 assending_idxs = sint(regint.inc(STASH_SIZE, 1))
 def stash_contains(ele):
     perm = sint.get_secure_shuffle(len(stash_idx))
     stash_idx_shuffled.assign(stash_idx.get_vector().secure_permute(perm))
-    stash_edge_shuffled.assign(stash_edge.get_vector().secure_permute(perm))
+    stash_edge_nodeedge_shuffled.assign(stash_edge_nodeedge.get_vector())
+    stash_edge_nodeedge_shuffled.secure_permute(perm)
     match_vector = (stash_idx_shuffled == ele)
     match_idx = (match_vector * assending_idxs).sum()
     contain_flag = (match_idx > 0)
-    rand_idx = sint(sfix.get_random(0,STASH_SIZE))
+    rand_idx = sint(sfix.get_random(0,STASH_SIZE-0.5))
     res_idx = contain_flag * (match_idx - 1) + (1 - contain_flag) * rand_idx
     return contain_flag, res_idx.reveal()
 
+tmp_edge = sint.Array(MMAX0)
+tmp_nodeedge = sint.Tensor([MMAX0, D])
 def search_layer_for_query(q_idx, ep, ef, lc, maxloop = MAXLOOP):
-    # global sta, sta_len
     MD = 100000000
     # MC = ef + MMAX0
     MC = maxloop * MMAX0
@@ -103,26 +110,35 @@ def search_layer_for_query(q_idx, ep, ef, lc, maxloop = MAXLOOP):
         # print_ln('--loop_t = %s', loop_t)
         # dist_c, c_node_idx = C[0]
         stash_contain_flag, res_idx = stash_contains(C[0][1])
+        # stash_contain_flag = sint(0)
+        # res_idx = cint(0)
         c_node_idx = stash_contain_flag.if_else(0, C[0][1]).reveal()
+        print_ln('debug xxx loop is %s, stash_flag is %s', loop_t, stash_contain_flag.reveal())
         '''c_node_idx应该是换成真正的 dummy'''
         # print_ln('c_node_idx = %s, dis = %s', 
                     # c_node_idx, dist_c.reveal())
-        x1 = stash_edge_shuffled[res_idx].get_vector()
-        x2 = edge[c_node_idx].get_vector()
-        tmp = x1 * stash_contain_flag + x2 * (1-stash_contain_flag)
+        # edge1 = stash_edge_nodeedge_shuffled[res_idx].get_vector(0,MMAX0)
+        # edge2 = edge[c_node_idx].get_vector()
+        # tmpedge = edge1 * stash_contain_flag + edge2 * (1-stash_contain_flag)
+        # nodeedge1 = stash_edge_nodeedge_shuffled[res_idx].get_vector(MMAX0)
+        # nodeedge2 = nodeedge[c_node_idx].get_vector()
+        x1 = stash_edge_nodeedge_shuffled[res_idx].get_vector()
+        x2 = sint.concat([edge[c_node_idx].get_vector(), nodeedge[c_node_idx].get_vector()])
+        tmpx = x1 * stash_contain_flag + x2 * (1-stash_contain_flag)
+        print_ln('tmpx len is %s, val is %s', len(tmpx), tmpx.reveal())
         sta_cnt.iadd(1)
         stash_idx[sta_cnt] = stash_contain_flag.if_else(-1, C[0][1])
-        stash_edge[sta_cnt] = tmp
+        stash_edge_nodeedge[sta_cnt] = tmpx
 
-        tmp_edge = sint.Tensor([MMAX0, D])
-        tmp_edge.assign(tmp)
+        tmp_edge.assign(tmpx[:MMAX0])
+        tmp_nodeedge.assign(sint(tmpx[MMAX0:]))
         C[0] = (MD, 0)
         @for_range_opt(MMAX0)
         def _(index):
             e_node_idx = tmp_edge[index]
             inserted_flag = secure_array_contains(v, e_node_idx)
             # print_ln('inserted_flag = %s', inserted_flag.reveal())
-            dist_e = distance_query_to_nodeedge(q_idx, c_node_idx, index)
+            dist_e = distance_query_to_tmpnodeedge(q_idx, index)
             tp_0 = inserted_flag.if_else(MD, dist_e)
             tp_1 = inserted_flag.if_else(0, e_node_idx)
             tp = (tp_0, tp_1)
@@ -329,31 +345,32 @@ def main():
         print_ln("当前查询点 (索引 %s) 为 (%s)", q_idx,
                                     querynode[q_idx].reveal())        
         # 调用查询专用函数 k_nn_search，并传递查询索引
-        knn_res = k_nn_search(q_idx, K, EF_CONSTRUCTION)
-        # knn_clr = [x.reveal() for x in knn_res]
-        # knn_arr = cint.Array(K)
-        # knn_arr.assign_vector(knn_clr)
-        # print_ln("序号: %s", knn_clr)
+        # knn_res = k_nn_search(q_idx, K, EF_CONSTRUCTION)
+        knn_res = k_nn_search(1, K, EF_CONSTRUCTION)
+        knn_clr = [x.reveal() for x in knn_res]
+        knn_arr = cint.Array(K)
+        knn_arr.assign_vector(knn_clr)
+        print_ln("序号: %s", knn_clr)
         # for res_idx in knn_res:
         #     dist = distance_query_to_node(q_idx, res_idx)
         #     print_ln("%s || %s", res_idx, dist)
 
         # 调用查询专用的暴力搜索函数    
-        brt_res = bruteforce_for_query_sort_array_updated(q_idx)
-        # brt_clr = [x.reveal() for x in brt_res]
-        # brt_arr = cint.Array(K)
-        # brt_arr.assign_vector(brt_clr)
-        # print_ln('序号: %s', brt_clr)
+        # brt_res = bruteforce_for_query_sort_array_updated(q_idx)
+        brt_res = bruteforce_for_query_sort_array_updated(1)
+        brt_clr = [x.reveal() for x in brt_res]
+        brt_arr = cint.Array(K)
+        brt_arr.assign_vector(brt_clr)
+        print_ln('序号: %s', brt_clr)
 
-        # ccnt = MemValue(cint(0))
-        # @for_range_opt([K, K])
-        # def _(i, j):
-        #     ccnt.write(ccnt + (knn_arr[i]==brt_arr[j]).if_else(1, 0))
-        # recall = ccnt / K
-        # ave_recall.iadd(ccnt)
-        # print_ln("召回率: %s", recall)
+        ccnt = MemValue(cint(0))
+        @for_range_opt([K, K])
+        def _(i, j):
+            ccnt.write(ccnt + (knn_arr[i]==brt_arr[j]).if_else(1, 0))
+        recall = ccnt / K
+        ave_recall.iadd(ccnt)
+        print_ln("召回率: %s", recall)
         print_ln("-------------------------------------")
-        
     print_ln("平均召回率: %s",  ave_recall / (nq * K))
     print_ln('-'*50+'END'+'-'*50)
 
