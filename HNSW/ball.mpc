@@ -467,14 +467,21 @@ N = 5
 # print_ln('\na[*][0][0] = %s', a.get_vector_by_indices(None, 0, 0).reveal())
 
 # x1 = a[0].get_vector()
-xx = sint.Array(1)
-t = sint.Array(1)
-print_ln('xx = %s', xx.reveal())
-@for_range_opt(10)
-def _(i):
-    t[0] = i
-    xx = xx.concat(t)
-    print_ln('%s', xx.reveal())
+# xx = sint(1)
+# t = sint(1)
+# xxx = MemValue(sint((1,2,3)))
+# z = sint((1,2,3,4))
+# # xxx.write(z)
+# print_ln('xx = %s', xxx.reveal())
+# # @for_range_opt(10)
+# # def _(i):
+# for i in range(10):
+#     t = sint(i)
+#     zz = MemValue(sint(xxx.read().concat(t)))
+#     # xx = xxx
+#     print_ln('len(zz) = %s\nzz = %s', len(zz.read()), zz.read().get_vector().reveal())
+
+
 # le = cint(100)
 # x2 = regint.inc(le)
 # print_ln('x1 = %s', x1.reveal())
@@ -513,3 +520,27 @@ def _(i):
 
 # a[2:8] = b
 # print_ln('%s', a.reveal())
+
+
+w = sint.Array(5)
+# w.secure_shuffle()
+w.assign((1,2,3,4,5))
+z = sint.Tensor([5,2])
+z.assign(sint((1,1,2,2,3,3,4,4,5,5)))
+@for_range_opt(4)
+def _(i):
+    z[i] = (i, i)
+    print_ln('z = %s',z.reveal())
+    # shuffl = sint.get_secure_shuffle(len(z))
+    # rd = sfix.get_random(0,10000)
+    # ss = sint(sfix.get_random(0,10000))
+    # print_ln('ss = %s', ss.reveal())
+    # print_ln('rand = %s, round = %s', rd.reveal(), sint(rd).reveal())
+    w.secure_permute(shuffl)
+    # z.secure_permute(shuffl)
+    # print_ln('z = %s', z.reveal())
+    # print_ln('w = %s', w.reveal())
+    # print_ln('------')
+    # print_ln('shuffl: type %s, len %s, val %s', type(shuffl), len(shuffl), shuffl)
+    # print_ln('%s', w.get_vector().secure_shuffle().reveal())
+    # print_ln('w = %s', w.reveal())

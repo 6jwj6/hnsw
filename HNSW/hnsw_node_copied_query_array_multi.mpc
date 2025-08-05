@@ -59,16 +59,30 @@ def distance_query_to_nodeedge(q_idx, c_node_idx, index):
     res = (delta * delta).sum()
     return res
 
-def stash_get_idx(vec, ele):
-    match_vector = (vec == ele)
-    x = regint.inc(sta_len, 0)
-    res_idx = (match_vector * x).sum()
-    return res_idx.reveal()
 
-sta = sint.Tensor([1, 1 + MMAX0 * D])
-sta_len = regint(1)
-def search_layer_for_query(q_idx, ep, ef, lc, maxloop):
-    global sta, sta_len
+
+MAXLOOP = 40
+MULTITASKS = 10
+STASH_SIZE = 1 + MAXLOOP * MULTITASKS
+stash_idx = sint.Array(STASH_SIZE)
+stash_edge = sint.Tensor([STASH_SIZE, MMAX0 * D])
+stash_idx_shuffled = sint.Array(STASH_SIZE)
+stash_edge_shuffled = sint.Tensor([STASH_SIZE, MMAX0 * D])
+sta_cnt = regint(0)
+assending_idxs = sint(regint.inc(STASH_SIZE, 1))
+def stash_contains(ele):
+    perm = sint.get_secure_shuffle(len(stash_idx))
+    stash_idx_shuffled.assign(stash_idx.get_vector().secure_permute(perm))
+    stash_edge_shuffled.assign(stash_edge.get_vector().secure_permute(perm))
+    match_vector = (stash_idx_shuffled == ele)
+    match_idx = (match_vector * assending_idxs).sum()
+    contain_flag = (match_idx > 0)
+    rand_idx = sint(sfix.get_random(0,STASH_SIZE))
+    res_idx = contain_flag * (match_idx - 1) + (1 - contain_flag) * rand_idx
+    return contain_flag, res_idx.reveal()
+
+def search_layer_for_query(q_idx, ep, ef, lc, maxloop = MAXLOOP):
+    # global sta, sta_len
     MD = 100000000
     # MC = ef + MMAX0
     MC = maxloop * MMAX0
@@ -88,23 +102,18 @@ def search_layer_for_query(q_idx, ep, ef, lc, maxloop):
     def _(loop_t):
         # print_ln('--loop_t = %s', loop_t)
         # dist_c, c_node_idx = C[0]
-        stash_idxs = sint((1,2,3,4))
-        # stash_idxs = sta.get_vector_by_indices(None, 0)
-        stash_contain_flag = secure_array_contains(stash_idxs, C[0][1])
-        c_node_idx = stash_contain_flag.if_else(0, C[0][1])
-        stash_idx = stash_get_idx(stash_idxs, c_node_idx)
-        '''这里stash的dummy还是用 0 , 上面的c_node_idx应该是换成真正的 dummy'''
+        stash_contain_flag, res_idx = stash_contains(C[0][1])
+        c_node_idx = stash_contain_flag.if_else(0, C[0][1]).reveal()
+        '''c_node_idx应该是换成真正的 dummy'''
         # print_ln('c_node_idx = %s, dis = %s', 
                     # c_node_idx, dist_c.reveal())
-        c_node_idx = c_node_idx.reveal()
-        x1 = sta[stash_idx][1:]
+        x1 = stash_edge_shuffled[res_idx].get_vector()
         x2 = edge[c_node_idx].get_vector()
         tmp = x1 * stash_contain_flag + x2 * (1-stash_contain_flag)
-        sta_len.iadd(1)
-        tmp_sta = sint.Tensor([1, 1 + MMAX0 * D])
-        tmp_sta[0][0] = stash_contain_flag.if_else(-1, C[0][1])
-        tmp_sta[0][1:] = tmp
-        sta = sta.concat(tmp_sta)
+        sta_cnt.iadd(1)
+        stash_idx[sta_cnt] = stash_contain_flag.if_else(-1, C[0][1])
+        stash_edge[sta_cnt] = tmp
+
         tmp_edge = sint.Tensor([MMAX0, D])
         tmp_edge.assign(tmp)
         C[0] = (MD, 0)
@@ -150,7 +159,7 @@ def k_nn_search(q_idx, k_param, ef_param):
     '''发现这样召回率还高了'''
     # 调用查询专用版本
     # print_ln("ep = %s", ep)
-    W = search_layer_for_query(q_idx, [ep], ef_param, 0, 40)
+    W = search_layer_for_query(q_idx, [ep], ef_param, 0)
     print_ln('lc = %s', 0)
     res = [ite[x.reveal()] for x in W[:k_param:]]
     stop_timer(timer_id=111)
