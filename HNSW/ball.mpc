@@ -570,3 +570,49 @@ N = 5
 # part_y2 = y.get_part_vector(4)
 # print_ln('part_y1 is %s, type is %s', part_y.reveal(), type(part_y))
 # print_ln('part_y2 is %s, type is %s', part_y2.reveal(), type(part_y2))
+
+
+n = 1000
+logn = log2(n)
+n_ = 1<<logn
+print_ln('n = %s, logn = %s, n_ = %s', n, logn, n_)
+W = sint.Tensor([n_])
+W.assign_all(100)
+W[10] = (66)
+# W.sort()
+# print_ln('%s', W.reveal())
+x = MemValue(sint(100000))
+
+@for_range_opt(start = 0, step = 1, stop = logn)
+def _(_):
+    jump = MemValue(1<<_)
+    # print_ln('jump = %s', jump)
+    @for_range_opt(start = jump * 2 - 1, step = 2 * jump, stop = n_) #stop is open interval
+    def _(i):
+        # print_ln('i = %s', i)
+        W[i] = (W[i] < W[i-jump]).if_else(W[i], W[i-jump])
+        # y = sint(i)<sint(i-jump)
+    # y = sint(_)<sint(_+1)
+    # print_ln('y = %s', y.reveal())
+    jump = jump << 1
+    # x.write((x < W[i]).if_else(x, W[i]))
+# print_ln('x = %s', x.reveal())
+print_ln('%s', W.reveal())
+
+
+# print_ln('%s',(sint(1)<sint(2)).reveal())
+
+# ww = sint(val = 100, size = 10000)
+# ww[0] = 66
+# ww_ = 
+# m = 100
+# ww = sint.Array(m)
+# @for_range_opt(m)
+# def _(i):
+#     # y = sint(i+1)<sint(i+100)
+#     ww[i] = sint(1)<sint(2)
+#     # y = sint(i)<sint(i+1)
+
+# q = sint(val = 1, size = m)
+# qq = sint(val = 2, size = m)
+# bij = q<qq

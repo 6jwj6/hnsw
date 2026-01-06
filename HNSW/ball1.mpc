@@ -1,0 +1,184 @@
+from Compiler.library import *
+from Compiler.compilerLib import Compiler
+from Compiler.types import *
+from Compiler.oram import *
+from Programs.Source.HNSW.HeapQ import MinHeapQ,MaxHeapQ
+import time
+from Compiler.mpc_math import *
+from Compiler.sorting import reveal_sort
+# sint(1)<sint(2)
+#                             *****     check sort(radix sort).     *****
+# A = sint.Array(4)
+# A[0] = 0
+# A[1] = 1
+# A[2] = 0
+# A[3] = 1
+# B = sint.Tensor([4,2])
+# B[0][0] = 1
+# B[0][1] = 0
+# B[1][0] = 0
+# B[1][1] = 1
+# B[2][0] = 1
+# B[2][1] = 0
+# B[3][0] = 0
+# B[3][1] = 1
+# # B.sort(n_bits=1)
+# Bt = B.transpose()
+# St_flat = Bt.get_vector().prefix_sum()
+# Tt_flat = Bt.get_vector() * St_flat.get_vector()
+# Tt = types.Matrix(*Bt.sizes, B.value_type)
+# Tt.assign_vector(Tt_flat)
+# sss = sum(Tt) - 1
+# reveal_sort(sss, A, reverse=False)
+# print_ln('Bt = %s', Bt.get_vector().reveal())
+# print_ln('St_flat = %s', St_flat.reveal())
+# print_ln('Tt_flat = %s', Tt_flat.reveal())
+# print_ln('Tt = %s', Tt.reveal())
+# print_ln('sss = %s', sss.reveal())
+
+# m = 10000
+# ww = sint.Array(m)
+# ww.sort()
+
+# @for_range_opt(start=0, step=1, stop=m)
+# # @for_range_opt(m)
+# def _(i):
+#     # y = sint(i+1)<sint(i+100)
+#     ww[i] = sint(1)<sint(2)
+#     y = sint(i)<sint(i+1)
+# q = sint(val = 1, size = m)
+# qq = sint(val = 2, size = m)
+# bij = q<qq
+
+# m = 10
+# W = sint.Tensor([m, 2])
+# W.assign_all(100)
+# sw = W.get_vector_by_indices(None, 0)
+# print_ln('%s', sw.reveal())
+# y = sint(1)<sint(2)
+
+
+
+# #
+# B = sint.Tensor([4,2])
+# B[0][0] = 3
+# B[0][1] = 2
+# B[1][0] = 1
+# B[1][1] = 1
+# B[2][0] = 3
+# B[2][1] = 0
+# B[3][0] = 0
+# B[3][1] = 2
+# print_ln('B_flat = %s', B.get_vector().reveal())
+# B_d = types.Matrix.create_from(B.get_vector().bit_decompose(2))
+# print_ln('B_d = %s', B_d.reveal())
+
+
+#   ***********************11111111***************
+# a = sint.Tensor([60, 2])
+# a.assign_all(10000000000)
+# a.sort(n_bits = 32)
+# print_ln('%s', a.reveal())
+
+
+#    **********************22222222****************
+
+# def secure_array_contains(target_array, element_to_find):
+#     """
+#     安全、高效地判断一个 sint 元素是否存在于 sint.Array 中。
+#     :param target_array: sint.Array, 在其中进行搜索的数组
+#     :param element_to_find: sint, 要查找的元素
+#     :return: sbool (sint), 如果存在则为1，否则为0
+#     """
+#     # broadcasted_element = sint.Array(size = target_array.length)
+#     # broadcasted_element.assign_all(element_to_find)   
+#     # # 向量化比较
+#     # match_vector = (target_array == broadcasted_element)
+#     match_vector = (target_array == element_to_find)
+#     num_matches = match_vector.sum()
+#     result = num_matches > 0
+#     return result
+
+# v = sint.Array(896)
+# v.assign_all(2)
+# res = secure_array_contains(v,sint(2))
+# print_ln('res = %s', res.reveal())
+
+
+#     ***********************3333333********************
+# def distance_query_to_node(q_idx, node_idx):
+#     """计算一个查询点和一个主数据集节点之间的距离"""
+#     vec1 = querynode[q_idx]
+#     vec2 = node[node_idx]
+#     delta = vec1 - vec2
+#     res = (delta * delta).sum()
+#     return res
+# querynode = sint.Tensor([10,128])
+# querynode.assign_all(10)
+# node = sint.Tensor([1000000,128])
+# res = distance_query_to_node(1,2)
+# print_ln('res = %s', res.reveal())
+
+# def distance_query_to_nodeedge(q_idx, c_node_idx, index):
+#     vec1 = querynode[q_idx]
+#     vec2 = nodeedge[c_node_idx][index]
+#     delta = vec1 - vec2
+#     res = (delta * delta).sum()
+#     return res
+# querynode = sint.Tensor([100,128])
+# querynode.assign_all(10)
+# nodeedge = sint.Tensor([1000,100, 128])
+# res = distance_query_to_nodeedge(1,2,1)
+# print_ln('res = %s', res.reveal())
+
+
+#       *************4444444444******************
+a = sint(3)
+T = 28
+M = 32
+flag = sint(1)
+xx = sint.Tensor([52, 3])
+yy = sint.Tensor([60, 2])
+# xx.sort(n_bits=32)
+
+# xx.assign_all(10000000000)
+# a.sort(n_bits = 32)
+# xx.sort(n_bits=32)
+v = sint.Array(T*M)
+v.assign_all(2)
+def secure_array_contains(target_array, element_to_find):
+    """
+    安全、高效地判断一个 sint 元素是否存在于 sint.Array 中。
+    :param target_array: sint.Array, 在其中进行搜索的数组
+    :param element_to_find: sint, 要查找的元素
+    :return: sbool (sint), 如果存在则为1，否则为0
+    """
+    # broadcasted_element = sint.Array(size = target_array.length)
+    # broadcasted_element.assign_all(element_to_find)   
+    # # 向量化比较
+    # match_vector = (target_array == broadcasted_element)
+    match_vector = (target_array == element_to_find)
+    num_matches = match_vector.sum()
+    result = num_matches > 0
+    return result
+@for_range_opt(T)
+def _(i):
+    x = a.reveal()
+    @for_range_opt(M)
+    def _(j):
+        # res = secure_array_contains(v,sint(2))
+        g = flag.if_else(sint(2),sint(1))
+        g1 = flag.if_else(sint(2),sint(1))
+        y = a.reveal
+    # xx.sort(n_bits=32)
+    # yy.sort(n_bits=32)
+# @for_range_opt(T)
+# def _(i):
+#     # xx.sort(n_bits=32)
+#     yy.sort(n_bits=32)
+@for_range_opt(T)
+def _(i):
+    xx.sort(n_bits=32)
+    # yy.sort(n_bits=32)
+# print_ln('a = %s', a.reveal())
+

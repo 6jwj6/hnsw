@@ -1,0 +1,87 @@
+from Compiler.library import *
+from Compiler.compilerLib import Compiler
+from Compiler.types import *
+from Compiler.oram import *
+from Programs.Source.HNSW.HeapQ import MinHeapQ,MaxHeapQ
+import time
+from Compiler.mpc_math import *
+
+def cost_sort(n, d, n_bits): # comm, rounds, seconds
+    if n == 1000000 and d == 1 and n_bits == 32:
+        return (3343.63, 556, 32.1)
+    if n == 1000000 and d == 2 and n_bits == 32:
+        return (3359.63, 556, 33)
+    if n == 1000000 and d == 3 and n_bits == 32:
+        return (3375.63, 556, 35.8)
+    if n == 60 and d == 2 and n_bits == 32:
+        return (0.203208, 556, 0.326737)
+    if n == 52 and d == 3 and n_bits == 32:
+        return (0.177163, 556, 0.328286)
+    
+
+def cost_linear_scan(n): # comm, rounds, seconds
+    if n == 896:
+        return  (0.042185, 32, 0.0203)
+
+def cost_distance_query_to_node(n, d): #comm, rounds, seconds
+    if n == 1000000 and d == 128:
+        return (0.001024, 1, 0.00150)
+
+def cost_loop_reveal_and_ifelse(T, M):
+    if T == 28 and M == 32:
+        return (0.014568, 20, 0.0128202)
+    
+def cost_loop_reveal_and_ifelse_linear_scan(T, M):
+    if T == 28 and M == 32:
+        return (37.7812, 451, 0.4093)
+
+def cost_hnsw_one_layer(T, M): # comm, rounds, seconds
+    S_V = T * M
+    S_C = T + M
+    S_W = ef + M
+    '''
+    t1 = cost_loop_reveal_and_ifelse(T,M)
+    t2 = cost_distance_query_to_node(N,D)
+    t3 = cost_sort(S_C,2,32)
+    t4 = cost_sort(S_W,3,32)
+    t5 = cost_linear_scan(S_V)
+    print_ln('%s %s %s %s', t1,t2,t3,t4)
+    # return map(lambda a,b,c,d,e:a+T*M*(b+e)+T*(c+d),t1,t2,t3,t4,t5)
+    return map(lambda a,b,c,d,e:a+T*M*(b+e)+T*(c+d),t1,t2,t3,t4,t5)
+    return cost_loop_reveal_and_ifelse(T,M) + T*M*cost_distance_query_to_node(N,D) +\
+           T * (cost_sort(S_C,2,32) + cost_sort(S_W,3,32))
+    '''
+    t1 = cost_loop_reveal_and_ifelse_linear_scan(T,M)
+    t2 = cost_distance_query_to_node(N,D)
+    t3 = cost_sort(S_C,2,32)
+    t4 = cost_sort(S_W,3,32)
+    print_ln('%s %s %s %s', t1,t2,t3,t4)
+    return map(lambda a,b,c,d:a+T*M*b+T*(c+d),t1,t2,t3,t4)
+    
+N = 1000000
+D = 128
+K = 10
+ef = 2 * K
+T = ef + 8
+M = 32
+
+S_V = T * M 
+S_C = T + M
+S_W = ef + M
+
+loops = T * M
+
+print_ln('K = %s, ef = %s, T = %s, M = %s\nS_V = %s, S_C = %s, S_W = %s, loops = %s',
+         K, ef, T, M, S_V, S_C, S_W, loops)
+'''
+K = 10, ef = 20, T = 28, M = 32
+S_V = 896, S_C = 60, S_W = 52, loops = 896
+'''
+comm = 0
+rounds = 0
+sec = 0
+comm, rounds, sec = cost_hnsw_one_layer(T, M)
+print_ln('-----------------------RESULT------------------------------------------\n'
+          '||  %sMB, %s rounds, time = %s seconds  ||\n' \
+          '----------------------------------------------------------------------' \
+          '', comm, rounds, sec)

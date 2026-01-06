@@ -44,7 +44,7 @@ def secure_array_contains(target_array, element_to_find):
     :return: sbool (sint), 如果存在则为1，否则为0
     """
     # broadcasted_element = sint.Array(size = target_array.length)
-    # broadcasted_element.assign_all(element_to_find)
+    # broadcasted_element.assign_all(element_to_find)   
     # # 向量化比较
     # match_vector = (target_array == broadcasted_element)
     match_vector = (target_array == element_to_find)
@@ -60,54 +60,38 @@ def distance_query_to_nodeedge(q_idx, c_node_idx, index):
     return res
 
 def search_layer_for_query(q_idx, ep, ef, lc, maxloop):
+    #别的参数都不用管，只要调下面这些。函数运行的框架是准的，结果是没意义的。
+    K = 10
+    ef = 2 * K
+    T = ef + 8
+    M = 32
     MD = 100000000
-    # MC = ef + MMAX0
-    MC = maxloop * MMAX0
-    C = sint.Tensor([MC+1, 2])
+
+    S_V = T * M 
+    S_C = T + M
+    S_W = ef + M
+    C = sint.Tensor([S_C,2])
     C.assign_all(MD)
     C[0] = (distance_query_to_node(q_idx, ep[0].reveal()), ep[0])
-    v = sint.Array(maxloop * MMAX0 + 2)
+    v = sint.Array(S_V)
     v.assign_all(0)
     v[1] = ep[0]
-    W = sint.Tensor([maxloop * MMAX0 + 2, 2])
-    W.assign_all(MD)
-    W[1] = (distance_query_to_node(q_idx, ep[0].reveal()), ep[0])
-    print_ln('qidx = %s', q_idx)
-    print_ln('ep = %s, dis = %s', ep[0].reveal(), W[1].reveal())
-    ed = MemValue(regint(1))
-    @for_range_opt(maxloop)
-    def _(loop_t):
-        # print_ln('--loop_t = %s', loop_t)
-        # dist_c, c_node_idx = C[0]
-        c_node_idx = C[0][1].reveal()
-        '''只是为了得到c_node_idx'''
-        # print_ln('c_node_idx = %s, dis = %s', 
-                    # c_node_idx, dist_c.reveal())
-        C[0] = (MD, 0)
+    W = sint.Tensor([S_W, 3])
 
+    @for_range_opt(T)
+    def _(loop_t):
+        c_node_idx = C[0][1].reveal()
         tmp_edge = edge[c_node_idx]
-        @for_range_opt(MMAX0)
+        @for_range_opt(M)
         def _(index):
-            e_node_idx = tmp_edge[index]
+            e_node_idx = tmp_edge[1]
             inserted_flag = secure_array_contains(v, e_node_idx)
-            # print_ln('inserted_flag = %s', inserted_flag.reveal())
-            dist_e = distance_query_to_nodeedge(q_idx, c_node_idx, index)
+            dist_e = distance_query_to_node(q_idx,ep[0].reveal())
             tp_0 = inserted_flag.if_else(MD, dist_e)
             tp_1 = inserted_flag.if_else(0, e_node_idx)
-            tp = (tp_0, tp_1)
-            # print_ln('tp = (%s, %s)', tp_0.reveal(), tp_1.reveal())
-            ed.iadd(1)
-            # print_ln('ed = %s', ed)
-            v[ed] = e_node_idx
-            C[MC-index] = tp
-            # C[ed] = tp
-            W[ed] = tp
-        C.sort()
-        # W.sort()
-        # tmp_ef = W.get_vector_by_indices(None, 1)[:ef]
-        # print_ln('W[:ef] = %s',[x.reveal() for x in tmp_ef])
-    W.sort()
-    return W.get_vector_by_indices(None, 1)[:ef:]
+        C.sort(n_bits=32)
+        W.sort(n_bits=32)   
+    return 0
 
 def k_nn_search(q_idx, k_param, ef_param):
     print_ln("\nq 的 K-ANN 搜索结果:")
@@ -119,7 +103,7 @@ def k_nn_search(q_idx, k_param, ef_param):
     # @for_range_opt(L, 1, -1)
     # def _(lc):
     #     # 调用查询专用版本
-    #     W = search_layer_for_query(q_idx, [ep], 1, lc, 5)
+    #     W = search_layer_for_query(q_idx, [ep], 1, lc, 1+0)
     #     print_ln('lc = %s', lc)
     #     assert len(W) == 1
     #     ep.write(W[0].reveal()+1)
@@ -128,11 +112,12 @@ def k_nn_search(q_idx, k_param, ef_param):
     '''发现这样召回率还高了'''
     # 调用查询专用版本
     # print_ln("ep = %s", ep)
-    W = search_layer_for_query(q_idx, [ep], ef_param, 0, 40)
+    W = search_layer_for_query(q_idx, [ep], ef_param, 0, 28)
     print_ln('lc = %s', 0)
-    res = [ite[x.reveal()] for x in W[:k_param:]]
+    # res = [ite[x.reveal()] for x in W[:k_param:]]
     stop_timer(timer_id=111)
-    return res
+    # return res
+    return []
 
 # --- 初始化和主程序 ---
 def init():
@@ -194,7 +179,7 @@ def init():
         tmp.input_from(2)
         nodeedge[i][j] = tmp
     print_ln("----完成读取 nodeedge ...")
-    # 打印前3个节点以供验证 
+    # 打印前3个节点以供验证
     # if N >= 3:
     #     for i in range(1, 4):
     #         for j in range(3):
@@ -327,4 +312,4 @@ def main():
     print_ln('-'*50+'END'+'-'*50)
 
 #------ 主函数 ------
-main() 
+main()
