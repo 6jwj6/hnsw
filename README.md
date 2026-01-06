@@ -1,3 +1,9 @@
+hnsw_node_copied_query_array_paper_version.mpc 里的
+def search_layer_for_query(q_idx, ep, ef, lc, maxloop)是和论文的算法耗时一样的（应该），
+改这个函数内的那些参数就行，跑出来的是一层完整的总时间。
+ball1.mpc是各个小组件拆开了。
+ball2.mpc是算总时间的脚本（是python，也可以直接mpc下跑的）
+
 HNSW文件夹里的文件是项目有用的文件  
 这个项目是./Programs/Source/ 这个文件夹下面的全部的文件  
 把HNSW整个文件夹放到./Programs/Source/内，或者直接放mp-spdz主目录下也可以。  
