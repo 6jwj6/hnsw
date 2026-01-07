@@ -13,11 +13,12 @@ def cost_sort(n, d, n_bits): # comm, rounds, seconds
         return (3359.63, 556, 33)
     if n == 1000000 and d == 3 and n_bits == 32:
         return (3375.63, 556, 35.8)
+    ''' d 取三个值是 排序的对象有payload'''
     if n == 60 and d == 2 and n_bits == 32:
         return (0.203208, 556, 0.326737)
     if n == 52 and d == 3 and n_bits == 32:
         return (0.177163, 556, 0.328286)
-    
+    '''这个n不同值是 C和W的长度, d不同是CW的payload不同'''
 
 def cost_linear_scan(n): # comm, rounds, seconds
     if n == 896:

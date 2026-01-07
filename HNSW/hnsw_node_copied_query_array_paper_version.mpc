@@ -67,7 +67,7 @@ def search_layer_for_query(q_idx, ep, ef, lc, maxloop):
     M = 32
     MD = 100000000
 
-    S_V = T * M 
+    S_V = T * M
     S_C = T + M
     S_W = ef + M
     C = sint.Tensor([S_C,2])

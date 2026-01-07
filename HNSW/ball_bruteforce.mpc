@@ -1,0 +1,77 @@
+from Compiler.library import *
+from Compiler.compilerLib import Compiler
+from Compiler.types import *
+from Compiler.oram import *
+from Programs.Source.HNSW.HeapQ import MinHeapQ,MaxHeapQ
+import time
+from Compiler.mpc_math import *
+from Compiler.sorting import reveal_sort
+def bruteforce_for_query_sort_array_updated(q_idx):
+    # print_ln("\n优化的暴力搜索结果:")
+    start_timer(666)
+    s = sint.Array(N+1)
+    s.assign_all(0)
+    tmp = sint.Array(N+1)
+    @for_range_opt(D)
+    def _(i):
+        tmp.assign_all(querynode[q_idx][i])
+        v = node_brt.get_vector_by_indices(None, i) - tmp
+        v = v * v
+        s.assign(s + v)
+    s = s.to_column_matrix()
+    x = sint.Tensor([N+1,1])
+    x.assign(regint.inc(size = N+1))
+    sQ = x.concat_columns(s)
+    # print_ln('%s', type(sQ))
+    sQ.sort(key_indices=[1])
+    sQ = sQ.get_vector_by_indices(None, 0)[:K:]
+    stop_timer(666)
+    return sQ
+
+N = 100000
+D = 32
+K = 1
+node_brt = sint.Tensor([N + 1, D])
+querynode = sint.Tensor([1, D])
+res = bruteforce_for_query_sort_array_updated(0)
+'''
+Brute force，以下排序都是64bit在做的
+首先，K（无关，因为只是返回值的时候截断了一下，都以K=1为例），以下两组测试N = 10000, D = 128, 
+K= 1
+Time666 = 0.89294 seconds (76.2446 MB, 1214 rounds)
+
+K = 10
+Time666 = 0.889165 seconds (76.2446 MB, 1214 rounds)
+
+其次，可以发现，就是和N是线性关系（当N比较大的时候，跑满bandwidth，以N=10w作为单位比较准）
+
+N = 10000, D = 128, K= 1
+Time666 = 0.89294 seconds (76.2446 MB, 1214 rounds)
+
+N =100000，D=128  
+Time666 = 5.79801 seconds (762.337 MB, 1214 rounds)
+
+N =200000， D = 128
+Time666 = 11.5892 seconds (1524.66 MB, 1214 rounds)
+
+N =300000， D=128
+Time666 = 18.7041 seconds (2286.99 MB, 1214 rounds)
+
+N =150000， D = 128
+Time666 = 8.6947 seconds (1143.5 MB, 1214 rounds)
+。。。。。
+猜一下，N= 100w， D = 128，
+58s， 7623MB， 1214 rounds
+
+看D的关系，D的差别是算距离的时候起作用，排序的时候是一样的，所以差值就是32轮的贡献。
+D + 32， time + 0.16s， data + 25.6MB，rounds + 32
+
+N =100000， D = 32
+Time666 = 5.28869 seconds (685.536 MB, 1118 rounds)
+
+N=100000，D= 64
+Time666 = 5.44238 seconds (711.136 MB, 1150 rounds)  
+
+N =100000，D=128  
+Time666 = 5.79801 seconds (762.337 MB, 1214 rounds)
+'''

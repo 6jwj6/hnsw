@@ -133,52 +133,53 @@ from Compiler.sorting import reveal_sort
 
 
 #       *************4444444444******************
-a = sint(3)
-T = 28
-M = 32
-flag = sint(1)
-xx = sint.Tensor([52, 3])
-yy = sint.Tensor([60, 2])
+# a = sint(3)
+# T = 28
+# M = 32
+# flag = sint(1)
+# xx = sint.Tensor([52, 3])
+# yy = sint.Tensor([60, 2])
 # xx.sort(n_bits=32)
 
 # xx.assign_all(10000000000)
 # a.sort(n_bits = 32)
 # xx.sort(n_bits=32)
-v = sint.Array(T*M)
-v.assign_all(2)
-def secure_array_contains(target_array, element_to_find):
-    """
-    安全、高效地判断一个 sint 元素是否存在于 sint.Array 中。
-    :param target_array: sint.Array, 在其中进行搜索的数组
-    :param element_to_find: sint, 要查找的元素
-    :return: sbool (sint), 如果存在则为1，否则为0
-    """
-    # broadcasted_element = sint.Array(size = target_array.length)
-    # broadcasted_element.assign_all(element_to_find)   
-    # # 向量化比较
-    # match_vector = (target_array == broadcasted_element)
-    match_vector = (target_array == element_to_find)
-    num_matches = match_vector.sum()
-    result = num_matches > 0
-    return result
-@for_range_opt(T)
-def _(i):
-    x = a.reveal()
-    @for_range_opt(M)
-    def _(j):
-        # res = secure_array_contains(v,sint(2))
-        g = flag.if_else(sint(2),sint(1))
-        g1 = flag.if_else(sint(2),sint(1))
-        y = a.reveal
+# v = sint.Array(T*M)
+# v.assign_all(2)
+# def secure_array_contains(target_array, element_to_find):
+#     """
+#     安全、高效地判断一个 sint 元素是否存在于 sint.Array 中。
+#     :param target_array: sint.Array, 在其中进行搜索的数组
+#     :param element_to_find: sint, 要查找的元素
+#     :return: sbool (sint), 如果存在则为1，否则为0
+#     """
+#     # broadcasted_element = sint.Array(size = target_array.length)
+#     # broadcasted_element.assign_all(element_to_find)   
+#     # # 向量化比较
+#     # match_vector = (target_array == broadcasted_element)
+#     match_vector = (target_array == element_to_find)
+#     num_matches = match_vector.sum()
+#     result = num_matches > 0
+#     return result
+# @for_range_opt(T)
+# def _(i):
+#     x = a.reveal()
+#     @for_range_opt(M)
+#     def _(j):
+#         # res = secure_array_contains(v,sint(2))
+#         g = flag.if_else(sint(2),sint(1))
+#         g1 = flag.if_else(sint(2),sint(1))
+#         y = a.reveal
     # xx.sort(n_bits=32)
     # yy.sort(n_bits=32)
 # @for_range_opt(T)
 # def _(i):
 #     # xx.sort(n_bits=32)
 #     yy.sort(n_bits=32)
-@for_range_opt(T)
-def _(i):
-    xx.sort(n_bits=32)
+# @for_range_opt(T)
+# def _(i):
+#     xx.sort(n_bits=32)
     # yy.sort(n_bits=32)
 # print_ln('a = %s', a.reveal())
 
+#      **************5555555555555*****************
