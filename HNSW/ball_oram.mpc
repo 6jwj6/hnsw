@@ -18,7 +18,7 @@ from Programs.Source.HNSW.HeapQ import MinHeapQ,MaxHeapQ
 import time
 from Compiler.mpc_math import *
 from Compiler.sorting import reveal_sort
-N = 20000
+N = 15000
 D = 1
 x = Array.create_from(sint(regint.inc(N)))
 a = OptimalORAM(size = N, value_type = sint, value_length = D)
@@ -30,6 +30,10 @@ y = a[0]
 stop_timer(timer_id=222)
 # print_ln('a[0] = %s', y.reveal())
 '''
+测试没有用上lan，就本地直接测的。 0ms RTT
+
+换lan和wan要重新测一下(后面有1msRTT 的 数据)
+
 spdz的ORAM的长度在2**13 = 8192之前，是linearORAM，之后是RecursiveORAM。
 对于linearORAM部分，comm大小 随D和N基本线性。 但是对于rounds，随N是线性，但是有截距（应该是一些计算的问题）。rounds随D也会变化，基本线性。
 ORAM
@@ -158,4 +162,30 @@ Time = 31.2596 seconds
 Time1 = 8.916e-06 seconds (0 MB, 0 rounds)
 Time222 = 0.094773 seconds (0.427643 MB, 2043 rounds)
 Data sent = 74.9152 MB in ~559283 rounds 
+'''
+
+
+
+'''---------------------------------------------------------------------------
+
+以下1msRTT
+
+N=10000，D=1
+Time = 46.3821 seconds 
+Time1 = 1.0375e-05 seconds (0 MB, 0 rounds)
+Time222 = 0.702083 seconds (0.288756 MB, 1331 rounds)
+Data sent = 9.63346 MB in ~73969 rounds 
+
+N=15000，D=1
+Time = 91.7712 seconds 
+Time1 = 5.584e-06 seconds (0 MB, 0 rounds)
+Time222 = 0.800649 seconds (0.315924 MB, 1461 rounds)
+Data sent = 19.5871 MB in ~146883 rounds 
+
+N=20000， D=1
+Time = 174.797 seconds 
+Time1 = 5.958e-06 seconds (0 MB, 0 rounds)
+Time222 = 0.947781 seconds (0.377387 MB, 1783 rounds)
+Data sent = 35.9252 MB in ~275579 rounds 
+
 '''
