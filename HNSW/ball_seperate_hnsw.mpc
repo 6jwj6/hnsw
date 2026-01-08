@@ -74,14 +74,14 @@ from Compiler.sorting import reveal_sort
 # print_ln('B_d = %s', B_d.reveal())
 
 
-#   ***********************11111111***************
+#   ***********************11111111 Sort  ***************
 # a = sint.Tensor([60, 2])
 # a.assign_all(10000000000)
 # a.sort(n_bits = 32)
 # print_ln('%s', a.reveal())
 
 
-#    **********************22222222****************
+#    **********************22222222 LinearScan ****************
 
 # def secure_array_contains(target_array, element_to_find):
 #     """
@@ -105,20 +105,24 @@ from Compiler.sorting import reveal_sort
 # print_ln('res = %s', res.reveal())
 
 
-#     ***********************3333333********************
-# def distance_query_to_node(q_idx, node_idx):
-#     """计算一个查询点和一个主数据集节点之间的距离"""
-#     vec1 = querynode[q_idx]
-#     vec2 = node[node_idx]
-#     delta = vec1 - vec2
-#     res = (delta * delta).sum()
-#     return res
-# querynode = sint.Tensor([10,128])
-# querynode.assign_all(10)
-# node = sint.Tensor([1000000,128])
+#     ***********************3333333 Calc Distance ********************
+def distance_query_to_node(q_idx, node_idx):
+    """计算一个查询点和一个主数据集节点之间的距离"""
+    vec1 = querynode[q_idx]
+    vec2 = node[node_idx]
+    delta = vec1 - vec2
+    res = (delta * delta).sum()
+    return res
+querynode = sint.Tensor([10,128])
+querynode.assign_all(10)
+node = sint.Tensor([1000000,128])
 # res = distance_query_to_node(1,2)
 # print_ln('res = %s', res.reveal())
-
+@for_range(3)
+def _(i):
+    @for_range(4)
+    def _(j):
+        x = distance_query_to_node(1,2)
 # def distance_query_to_nodeedge(q_idx, c_node_idx, index):
 #     vec1 = querynode[q_idx]
 #     vec2 = nodeedge[c_node_idx][index]
@@ -132,7 +136,7 @@ from Compiler.sorting import reveal_sort
 # print_ln('res = %s', res.reveal())
 
 
-#       *************4444444444******************
+#       *************4444444444   除了sort和distance之外，双重循环的结果******************
 # a = sint(3)
 # T = 28
 # M = 32

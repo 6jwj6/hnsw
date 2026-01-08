@@ -61,10 +61,10 @@ def distance_query_to_nodeedge(q_idx, c_node_idx, index):
 
 def search_layer_for_query(q_idx, ep, ef, lc, maxloop):
     #别的参数都不用管，只要调下面这些。函数运行的框架是准的，结果是没意义的。
-    K = 10
+    K = 5
     ef = 2 * K
-    T = ef + 8
-    M = 32
+    T = ef + 4
+    M = 8
     MD = 100000000
 
     S_V = T * M
@@ -78,7 +78,7 @@ def search_layer_for_query(q_idx, ep, ef, lc, maxloop):
     v[1] = ep[0]
     W = sint.Tensor([S_W, 3])
 
-    @for_range_opt(T)
+    @for_range(T)
     def _(loop_t):
         c_node_idx = C[0][1].reveal()
         tmp_edge = edge[c_node_idx]
@@ -89,8 +89,8 @@ def search_layer_for_query(q_idx, ep, ef, lc, maxloop):
             dist_e = distance_query_to_node(q_idx,ep[0].reveal())
             tp_0 = inserted_flag.if_else(MD, dist_e)
             tp_1 = inserted_flag.if_else(0, e_node_idx)
-        C.sort(n_bits=32)
-        W.sort(n_bits=32)   
+        # C.sort(n_bits=32)
+        # W.sort(n_bits=32)
     return 0
 
 def k_nn_search(q_idx, k_param, ef_param):
