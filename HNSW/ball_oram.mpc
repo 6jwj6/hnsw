@@ -1,0 +1,161 @@
+'''
+oram 每个元素是向量.
+N， D， 规律
+
+两个模式，每次拿1个， 每次拿多个。
+
+round log(N)
+comm sqrt(N)
+
+PIR ? 
+
+'''
+from Compiler.library import *
+from Compiler.compilerLib import Compiler
+from Compiler.types import *
+from Compiler.oram import *
+from Programs.Source.HNSW.HeapQ import MinHeapQ,MaxHeapQ
+import time
+from Compiler.mpc_math import *
+from Compiler.sorting import reveal_sort
+N = 20000
+D = 1
+x = Array.create_from(sint(regint.inc(N)))
+a = OptimalORAM(size = N, value_type = sint, value_length = D)
+# a.batch_init(x)
+# print_ln('%s', a)
+start_timer(timer_id=222)
+y = a[0]
+# print_ln('type(a) = %s', type(a))
+stop_timer(timer_id=222)
+# print_ln('a[0] = %s', y.reveal())
+'''
+spdz的ORAM的长度在2**13 = 8192之前，是linearORAM，之后是RecursiveORAM。
+对于linearORAM部分，comm大小 随D和N基本线性。 但是对于rounds，随N是线性，但是有截距（应该是一些计算的问题）。rounds随D也会变化，基本线性。
+ORAM
+阈值if n_threads == 1:
+            threshold = 2**11
+        else:
+            threshold = 2**13
+阈值是2**13  = 8,192
+
+阈值之前是LinearORAM
+阈值之后是RecursiveORAM
+
+访问一次（a[0])，研究N的关系。
+N = 100, D = 1 
+Time = 0.00222846 seconds 
+Data sent = 0.003005 MB in ~43 rounds
+
+N=200， D=1
+Time = 0.00329413 seconds 
+Data sent = 0.005733 MB in ~64 rounds
+
+N=400， D=1
+Time = 0.00600692 seconds 
+Data sent = 0.011183 MB in ~122 rounds
+
+N=1000， D= 1
+Time = 0.0111773 seconds 
+Data sent = 0.025079 MB in ~239 rounds 
+
+
+访问一次，研究D的关系，
+可以发现 comm+0.0008MB / 1D ，rounds ？？？基本线性吧
+
+N = 100, D = 1 
+Time = 0.00222846 seconds 
+Data sent = 0.003005 MB in ~43 rounds   
+
+N =100，D=2
+Time = 0.00228583 seconds 
+Data sent = 0.003805 MB in ~46 rounds
+
+N=100，D=4
+Time = 0.002772 seconds 
+Data sent = 0.005405 MB in ~51 rounds
+
+N=100，D = 10
+Time = 0.00306246 seconds 
+Data sent = 0.010205 MB in ~65 rounds
+
+N=100，D=20
+Time = 0.00404425 seconds 
+Data sent = 0.018205 MB in ~81 rounds 
+
+N=100，D=40
+Time = 0.00657225 seconds 
+Data sent = 0.034205 MB in ~131 rounds
+
+
+
+对于RecursiveORAM
+
+研究D的关系 time222是y = a[0]这个访问操作的cost数据
+comm 随D线性，差不多是0.0327MB * D + 0.256MB 
+Rounds基本不随D变，不是很明确。
+ N=10000，D=1
+Time = 4.20958 seconds 
+Time1 = 4.625e-06 seconds (0 MB, 0 rounds)
+Time222 = 0.0642468 seconds (0.288756 MB, 1331 rounds)
+Data sent = 9.63346 MB in ~73969 rounds 
+
+N=10000，D=2
+Time = 4.14135 seconds 
+Time1 = 2.916e-06 seconds (0 MB, 0 rounds)
+Time222 = 0.0623397 seconds (0.321484 MB, 1331 rounds)
+Data sent = 9.66619 MB in ~73969 rounds
+
+N=10000，D=4
+Time = 4.14105 seconds 
+Time1 = 3.125e-06 seconds (0 MB, 0 rounds)
+Time222 = 0.0637892 seconds (0.38694 MB, 1331 rounds)
+Data sent = 9.73164 MB in ~73969 rounds
+
+N=10000，D=10
+Time = 4.18888 seconds 
+Time1 = 6.083e-06 seconds (0 MB, 0 rounds)
+Time222 = 0.0653562 seconds (0.5835 MB, 1376 rounds)
+Data sent = 9.9282 MB in ~74014 rounds
+
+N=10000，D=100
+Time = 4.10214 seconds 
+Time1 = 3.125e-06 seconds (0 MB, 0 rounds)
+Time222 = 0.0803388 seconds (3.52902 MB, 1376 rounds)
+Data sent = 12.8737 MB in ~74014 rounds 
+
+研究N的关系
+数据量 (MB) - 验证 poly log N
+轮数的增长不是平滑的，而是阶梯状 (Step-wise) 的
+初始化 (Data sent): 极其昂贵的代价
+
+N=10000，D=1
+Time = 4.20958 seconds 
+Time1 = 4.625e-06 seconds (0 MB, 0 rounds)
+Time222 = 0.0642468 seconds (0.288756 MB, 1331 rounds)
+Data sent = 9.63346 MB in ~73969 rounds 
+
+N=15000，D=1
+Time = 8.25037 seconds 
+Time1 = 4.75e-06 seconds (0 MB, 0 rounds)
+Time222 = 0.0684325 seconds (0.315924 MB, 1461 rounds)
+Data sent = 19.5871 MB in ~146883 rounds 
+
+N=20000，D=1
+Time = 15.6127 seconds 
+Time1 = 6.417e-06 seconds (0 MB, 0 rounds)
+Time222 = 0.0836298 seconds (0.377387 MB, 1783 rounds)
+Data sent = 35.9252 MB in ~275579 rounds
+
+N=25000，D=1
+Time = 22.5979 seconds 
+Time1 = 7.125e-06 seconds (0 MB, 0 rounds)
+Time222 = 0.091106 seconds (0.399995 MB, 1913 rounds)
+Data sent = 53.7553 MB in ~405483 rounds
+
+N=30000，D=1
+Time = 31.2596 seconds 
+Time1 = 8.916e-06 seconds (0 MB, 0 rounds)
+Time222 = 0.094773 seconds (0.427643 MB, 2043 rounds)
+Data sent = 74.9152 MB in ~559283 rounds 
+'''

@@ -48,7 +48,7 @@ Time666 = 0.889165 seconds (76.2446 MB, 1214 rounds)
 N = 10000, D = 128, K= 1
 Time666 = 0.89294 seconds (76.2446 MB, 1214 rounds)
 
-N =100000，D=128  
+N =100000，D=128
 Time666 = 5.79801 seconds (762.337 MB, 1214 rounds)
 
 N =200000， D = 128
@@ -70,8 +70,8 @@ N =100000， D = 32
 Time666 = 5.28869 seconds (685.536 MB, 1118 rounds)
 
 N=100000，D= 64
-Time666 = 5.44238 seconds (711.136 MB, 1150 rounds)  
+Time666 = 5.44238 seconds (711.136 MB, 1150 rounds)
 
-N =100000，D=128  
+N =100000，D=128
 Time666 = 5.79801 seconds (762.337 MB, 1214 rounds)
 '''
